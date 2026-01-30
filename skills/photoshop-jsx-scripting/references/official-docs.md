@@ -18,13 +18,7 @@
 ## Platform and API landscape
 - Photoshop APIs for Developers (Adobe)
   - https://developer.adobe.com/photoshop/
-  - Overview of UXP vs ExtendScript vs legacy technologies.
-- Legacy Extensibility (Adobe)
-  - https://developer.adobe.com/photoshop/uxp/2022/guides/legacy-extensibility/
-  - ExtendScript support and migration notes.
-- UXP Scripting in Photoshop
-  - https://developer.adobe.com/photoshop/uxp/2022/ps_reference/media/uxpscripting/
-  - If you want .psjs (UXP) scripts instead of JSX.
+  - General platform overview and legacy extensibility notes.
 
 ## Installed resources (when available)
 - Photoshop installs scripting docs under `Scripting/Documents`.
