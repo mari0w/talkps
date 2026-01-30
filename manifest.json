@@ -1,0 +1,27 @@
+{
+  "manifestVersion": 5,
+  "id": "com.charles.photoshop.redbackground",
+  "name": "Red Background",
+  "version": "1.0.0",
+  "main": "main.js",
+  "host": {
+    "app": "PS",
+    "minVersion": "23.3.0",
+    "data": {
+      "apiVersion": 2
+    }
+  },
+  "entrypoints": [
+    {
+      "type": "panel",
+      "id": "redBackgroundPanel",
+      "label": {
+        "default": "Red Background"
+      },
+      "minimumSize": { "width": 220, "height": 140 },
+      "maximumSize": { "width": 1200, "height": 1200 },
+      "preferredDockedSize": { "width": 240, "height": 160 },
+      "preferredFloatingSize": { "width": 240, "height": 160 }
+    }
+  ]
+}
