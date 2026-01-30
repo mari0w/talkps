@@ -1,10 +1,9 @@
 # talkps
 
-[English](README.md) | [简体中文](README.zh-CN.md)
-
 A lightweight bridge for driving Adobe Photoshop from Codex workflows. The repo includes:
 
 - **ExtendScript/JSX bridge** (`ps_agent.jsx` + `ps_call.sh`) for JSON-in/JSON-out commands.
+- **UXP panel sample** (`main.js`, `manifest.json`) showing modern Photoshop plugin usage.
 - **Skill package** (`skills/photoshop-jsx-scripting`) with references and workflow guidance.
 
 ## Architecture
@@ -77,22 +76,22 @@ The Photoshop skill lives in `skills/photoshop-jsx-scripting`. It documents:
 These are the Photoshop operations currently implemented in `ps_agent.jsx`:
 
 **Health & inspection**
-- `ping` — verify the bridge is reachable.
-- `get_document_info` — fetch active document metadata (name, size, resolution, mode).
-- `list_layers` — list the layer tree with groups, bounds, and visibility.
-- `list_fonts` — list installed fonts (name, family, style, PostScript name).
+- `ping`
+- `get_document_info`
+- `list_layers`
+- `list_fonts`
 
 **Text**
-- `add_text_layer` — create a text layer with content, font, size, color, and position.
+- `add_text_layer` (set text content, font, size, color, position)
 
 **Layer management**
-- `merge_active_down` — merge the active layer with the one below it.
-- `merge_visible_layers` — merge all visible layers into one.
-- `duplicate_active_layer` — duplicate the active layer (optionally rename).
-- `delete_active_layer` — delete the active layer.
-- `rename_active_layer` — rename the active layer.
-- `set_active_layer_visibility` — show or hide the active layer.
-- `set_active_layer_opacity` — set the active layer opacity (0-100).
+- `merge_active_down`
+- `merge_visible_layers`
+- `duplicate_active_layer`
+- `delete_active_layer`
+- `rename_active_layer`
+- `set_active_layer_visibility`
+- `set_active_layer_opacity`
 
 ## Official documentation sources
 
@@ -101,6 +100,10 @@ These are the primary sources used to map commands to Photoshop scripting APIs:
 - Photoshop JavaScript Reference (PDF, 2020): https://community.adobe.com/havfw69955/attachments/havfw69955/photoshop/551504/1/photoshop-javascript-ref-2020-online2pdf-version.pdf
 - Photoshop Scripting Guide (PDF, 2020): https://community.adobe.com/havfw69955/attachments/havfw69955/photoshop/551569/1/photoshop-scripting-guide-2020-online2pdf-version.pdf
 - Scripting in Photoshop (HelpX): https://helpx.adobe.com/photoshop/using/scripting.html
+
+## UXP sample panel
+
+`main.js` and `manifest.json` define a minimal UXP panel that adds a red background layer using `batchPlay`. Use this as a starting point for UXP-based workflows.
 
 ## Notes
 

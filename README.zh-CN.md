@@ -1,10 +1,9 @@
 # talkps
 
-[English](README.md) | [简体中文](README.zh-CN.md)
-
 这是一个用于在 Codex 工作流中驱动 Adobe Photoshop 的轻量桥接仓库，包含以下内容：
 
 - **ExtendScript/JSX 桥接**（`ps_agent.jsx` + `ps_call.sh`），以 JSON 方式进行命令输入/输出。
+- **UXP 面板示例**（`main.js`, `manifest.json`），展示现代 Photoshop 插件调用方式。
 - **技能包**（`skills/photoshop-jsx-scripting`），包含官方参考与扩展流程。
 
 ## 架构
@@ -77,22 +76,22 @@ Photoshop 技能包位于 `skills/photoshop-jsx-scripting`，包含：
 以下是 `ps_agent.jsx` 目前已经实现的 Photoshop 操作：
 
 **健康检查与信息获取**
-- `ping` — 检查桥接是否可用。
-- `get_document_info` — 获取当前文档信息（名称、尺寸、分辨率、模式）。
-- `list_layers` — 列出图层树（含分组、边界、可见性）。
-- `list_fonts` — 列出已安装字体（名称、族、样式、PostScript 名称）。
+- `ping`
+- `get_document_info`
+- `list_layers`
+- `list_fonts`
 
 **文字相关**
-- `add_text_layer` — 创建文字图层并设置内容、字体、字号、颜色、位置。
+- `add_text_layer`（设置文字内容、字体、字号、颜色、位置）
 
 **图层管理**
-- `merge_active_down` — 将当前图层向下合并。
-- `merge_visible_layers` — 合并所有可见图层。
-- `duplicate_active_layer` — 复制当前图层（可选重命名）。
-- `delete_active_layer` — 删除当前图层。
-- `rename_active_layer` — 重命名当前图层。
-- `set_active_layer_visibility` — 设置当前图层显示/隐藏。
-- `set_active_layer_opacity` — 设置当前图层透明度（0-100）。
+- `merge_active_down`
+- `merge_visible_layers`
+- `duplicate_active_layer`
+- `delete_active_layer`
+- `rename_active_layer`
+- `set_active_layer_visibility`
+- `set_active_layer_opacity`
 
 ## 官方文档来源
 
@@ -101,6 +100,10 @@ Photoshop 技能包位于 `skills/photoshop-jsx-scripting`，包含：
 - Photoshop JavaScript Reference（PDF, 2020）：https://community.adobe.com/havfw69955/attachments/havfw69955/photoshop/551504/1/photoshop-javascript-ref-2020-online2pdf-version.pdf
 - Photoshop Scripting Guide（PDF, 2020）：https://community.adobe.com/havfw69955/attachments/havfw69955/photoshop/551569/1/photoshop-scripting-guide-2020-online2pdf-version.pdf
 - Scripting in Photoshop（HelpX）：https://helpx.adobe.com/photoshop/using/scripting.html
+
+## UXP 面板示例
+
+`main.js` 与 `manifest.json` 定义了一个最小 UXP 面板示例，它使用 `batchPlay` 添加红色背景层，可作为 UXP 工作流的起点。
 
 ## 说明
 
