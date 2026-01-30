@@ -93,9 +93,11 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 PS_LLM_CMD="codex exec" ./skills/photoshop-jsx-scripting/scripts/ps_nl.sh "列出图层"
 ```
 
+> 注意：如果本机没有 `codex`，必须设置 `PS_LLM_CMD` 为其它可用 LLM 命令，并确保只输出 JSON。
+
 ### 配置覆盖
 
-默认情况下脚本会在当前目录读写 `skills/photoshop-jsx-scripting/scripts/ps_request.json` / `skills/photoshop-jsx-scripting/scripts/ps_response.json`。如需自定义路径，可设置：
+默认情况下脚本改为使用 `/tmp` 下的临时文件来读写 `ps_request/ps_response`（避免并发冲突）。如需固定路径，可设置：
 
 - `PS_REQUEST_FILE`
 - `PS_RESPONSE_FILE`

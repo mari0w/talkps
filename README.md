@@ -93,9 +93,11 @@ Override the LLM command with `PS_LLM_CMD` (defaults to `codex exec` if availabl
 PS_LLM_CMD="codex exec" ./skills/photoshop-jsx-scripting/scripts/ps_nl.sh "list layers"
 ```
 
+> **Note:** If `codex` isn't installed, you must set `PS_LLM_CMD` to another LLM command that prints JSON only.
+
 ### Config overrides
 
-By default the scripts read/write `skills/photoshop-jsx-scripting/scripts/ps_request.json` and `skills/photoshop-jsx-scripting/scripts/ps_response.json` next to the scripts. If you need custom paths (for example, when the files live in a synced folder), set:
+By default the scripts now use temporary files in `/tmp` for `ps_request`/`ps_response` (to avoid collisions). If you need fixed paths (for example, when the files live in a synced folder), set:
 
 - `PS_REQUEST_FILE`
 - `PS_RESPONSE_FILE`

@@ -2,8 +2,15 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "$0")" && pwd)"
-request_file="${PS_REQUEST_FILE:-$script_dir/ps_request.json}"
-response_file="${PS_RESPONSE_FILE:-$script_dir/ps_response.json}"
+request_file="${PS_REQUEST_FILE:-}"
+response_file="${PS_RESPONSE_FILE:-}"
+
+if [[ -z "${request_file}" ]]; then
+  request_file="$(mktemp /tmp/ps_request.XXXXXX.json)"
+fi
+if [[ -z "${response_file}" ]]; then
+  response_file="$(mktemp /tmp/ps_response.XXXXXX.json)"
+fi
 agent_jsx="${PS_AGENT_JSX:-$script_dir/ps_agent.jsx}"
 runner="${PS_RUNNER:-$script_dir/run_ps.sh}"
 
