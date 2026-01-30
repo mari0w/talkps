@@ -24,7 +24,7 @@ Use this table to design requests and responses for the JSX bridge.
 
 - `get_document_info`
   - Params: none
-  - Response: `{ name, width, height, resolution, mode, colorProfile }`
+  - Response: `{ name, width, height, resolution, mode, colorProfile, profile, bitDepth }`
 
 - `list_layers`
   - Params: none
@@ -133,3 +133,205 @@ Use this table to design requests and responses for the JSX bridge.
   - Params:
     - `mode` (string, required, e.g. `MULTIPLY`, `SCREEN`, `OVERLAY`)
   - Response: `{ blendMode, id }`
+
+## Selections
+- `select_all`
+  - Params: none
+  - Response: `{ selected: "all" }`
+
+- `deselect`
+  - Params: none
+  - Response: `{ selected: "none" }`
+
+- `invert_selection`
+  - Params: none
+  - Response: `{ inverted: true }`
+
+- `expand_selection`
+  - Params:
+    - `amount` (number, required, px)
+  - Response: `{ expanded }`
+
+- `contract_selection`
+  - Params:
+    - `amount` (number, required, px)
+  - Response: `{ contracted }`
+
+- `feather_selection`
+  - Params:
+    - `radius` (number, required, px)
+  - Response: `{ feather }`
+
+## Groups
+- `create_layer_group`
+  - Params:
+    - `name` (string, optional)
+  - Response: `{ name, id }`
+
+- `move_layers_to_group`
+  - Params:
+    - `groupId` (number, optional)
+    - `groupName` (string, optional)
+    - `layerIds` (array, optional)
+    - `layerNames` (array, optional)
+  - Response: `{ moved, groupId, groupName }`
+
+- `ungroup_layer_group`
+  - Params:
+    - `groupId` (number, optional)
+    - `groupName` (string, optional)
+  - Response: `{ ungrouped, parentName }`
+
+## Adjustment layers
+- `add_levels_adjustment_layer`
+  - Params:
+    - `name` (string, optional)
+  - Response: `{ name, id, kind }`
+
+- `add_curves_adjustment_layer`
+  - Params:
+    - `name` (string, optional)
+  - Response: `{ name, id, kind }`
+
+- `add_hue_saturation_adjustment_layer`
+  - Params:
+    - `name` (string, optional)
+  - Response: `{ name, id, kind }`
+
+- `add_black_white_adjustment_layer`
+  - Params:
+    - `name` (string, optional)
+  - Response: `{ name, id, kind }`
+
+## Fill layers
+- `add_solid_fill_layer`
+  - Params:
+    - `name` (string, optional)
+    - `color` (array `[r,g,b]`, optional)
+  - Response: `{ name, id, kind }`
+
+- `add_gradient_fill_layer`
+  - Params:
+    - `name` (string, optional)
+    - `colors` (array of `[r,g,b]`, optional)
+    - `angle` (number, optional)
+    - `scale` (number, optional)
+    - `type` (string, optional, `LINEAR`, `RADIAL`, `ANGLE`, `REFLECTED`, `DIAMOND`)
+  - Response: `{ name, id, kind }`
+
+- `add_pattern_fill_layer`
+  - Params:
+    - `name` (string, optional)
+    - `patternName` (string, required if no `patternId`)
+    - `patternId` (string, required if no `patternName`)
+    - `scale` (number, optional)
+  - Response: `{ name, id, kind }`
+
+## Layer masks
+- `create_layer_mask`
+  - Params:
+    - `fromSelection` (boolean, optional)
+  - Response: `{ mask: "created" }`
+
+- `apply_layer_mask`
+  - Params: none
+  - Response: `{ mask: "applied" }`
+
+- `delete_layer_mask`
+  - Params:
+    - `apply` (boolean, optional)
+  - Response: `{ mask: "deleted" }`
+
+- `invert_layer_mask`
+  - Params: none
+  - Response: `{ mask: "inverted" }`
+
+## Clipping mask
+- `set_clipping_mask`
+  - Params:
+    - `enabled` (boolean, required)
+  - Response: `{ clipping, id }`
+
+- `create_clipping_mask`
+  - Params: none
+  - Response: `{ clipping, id }`
+
+- `release_clipping_mask`
+  - Params: none
+  - Response: `{ clipping, id }`
+
+## Shape layers
+- `add_shape_rect`
+  - Params:
+    - `x` (number, required)
+    - `y` (number, required)
+    - `width` (number, required)
+    - `height` (number, required)
+    - `color` (array `[r,g,b]`, optional)
+    - `name` (string, optional)
+  - Response: `{ name, id, kind }`
+
+- `add_shape_ellipse`
+  - Params:
+    - `x` (number, required)
+    - `y` (number, required)
+    - `width` (number, required)
+    - `height` (number, required)
+    - `color` (array `[r,g,b]`, optional)
+    - `name` (string, optional)
+  - Response: `{ name, id, kind }`
+
+## Transform
+- `transform_active_layer`
+  - Params:
+    - `scaleX` (number, optional, percent)
+    - `scaleY` (number, optional, percent)
+    - `rotate` (number, optional, degrees)
+    - `offsetX` (number, optional, px)
+    - `offsetY` (number, optional, px)
+  - Response: `{ transformed, id }`
+
+- `flip_active_layer_horizontal`
+  - Params: none
+  - Response: `{ flipped, id }`
+
+- `flip_active_layer_vertical`
+  - Params: none
+  - Response: `{ flipped, id }`
+
+## Align / distribute
+- `align_layers`
+  - Params:
+    - `layerIds` (array, required)
+    - `mode` (string, optional, `LEFT`, `RIGHT`, `CENTER_HORIZONTAL`, `TOP`, `BOTTOM`, `CENTER_VERTICAL`)
+    - `reference` (string, optional, `FIRST`, `DOCUMENT`)
+  - Response: `{ aligned, mode }`
+
+- `distribute_layers`
+  - Params:
+    - `layerIds` (array, required, min 3)
+    - `axis` (string, optional, `HORIZONTAL`, `VERTICAL`)
+  - Response: `{ distributed, axis }`
+
+## Place / export
+- `place_image_as_layer`
+  - Params:
+    - `path` (string, required)
+    - `name` (string, optional)
+  - Response: `{ placed, name, id }`
+
+- `export_document`
+  - Params:
+    - `path` (string, required)
+    - `format` (string, required, `png`, `jpg`, `webp`)
+    - `quality` (number, optional)
+  - Response: `{ exported, path, format }`
+
+## History
+- `history_undo`
+  - Params: none
+  - Response: `{ undo: true }`
+
+- `history_redo`
+  - Params: none
+  - Response: `{ redo: true }`

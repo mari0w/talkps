@@ -38,6 +38,40 @@ Use this skill to drive Photoshop with ExtendScript/JSX, look up DOM objects/met
 - `set_active_layer_visibility` (requires params)
 - `set_active_layer_opacity` (requires params)
 - `set_active_layer_blend_mode` (requires params)
+- `select_all`
+- `deselect`
+- `invert_selection`
+- `expand_selection` (requires params)
+- `contract_selection` (requires params)
+- `feather_selection` (requires params)
+- `create_layer_group` (optional params)
+- `move_layers_to_group` (requires params)
+- `ungroup_layer_group` (optional params)
+- `add_levels_adjustment_layer` (optional params)
+- `add_curves_adjustment_layer` (optional params)
+- `add_hue_saturation_adjustment_layer` (optional params)
+- `add_black_white_adjustment_layer` (optional params)
+- `add_solid_fill_layer` (optional params)
+- `add_gradient_fill_layer` (optional params)
+- `add_pattern_fill_layer` (requires params)
+- `create_layer_mask` (optional params)
+- `apply_layer_mask`
+- `delete_layer_mask` (optional params)
+- `invert_layer_mask`
+- `set_clipping_mask` (requires params)
+- `create_clipping_mask`
+- `release_clipping_mask`
+- `add_shape_rect` (requires params)
+- `add_shape_ellipse` (requires params)
+- `transform_active_layer` (requires params)
+- `flip_active_layer_horizontal`
+- `flip_active_layer_vertical`
+- `align_layers` (requires params)
+- `distribute_layers` (requires params)
+- `place_image_as_layer` (requires params)
+- `export_document` (requires params)
+- `history_undo`
+- `history_redo`
 
 ## JSON params format
 Send JSON when a command needs parameters:

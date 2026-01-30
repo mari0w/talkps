@@ -145,6 +145,14 @@
         return "null";
     }
 
+    function cID(value) {
+        return charIDToTypeID(value);
+    }
+
+    function sID(value) {
+        return stringIDToTypeID(value);
+    }
+
     function boundsToArray(b) {
         return [
             b[0].as("px"),
@@ -197,7 +205,9 @@
             height: doc.height.as("px"),
             resolution: doc.resolution,
             mode: String(doc.mode),
-            colorProfile: doc.colorProfileName
+            colorProfile: doc.colorProfileName,
+            profile: doc.colorProfileName,
+            bitDepth: mapBitsPerChannel(doc.bitsPerChannel)
         };
     }
 
@@ -296,6 +306,655 @@
             return AnchorPosition[key];
         }
         throw new Error("Unsupported anchor position: " + value);
+    }
+
+    function mapBitsPerChannel(value) {
+        if (!value) {
+            return null;
+        }
+        if (value === BitsPerChannelType.ONE) {
+            return 1;
+        }
+        if (value === BitsPerChannelType.EIGHT) {
+            return 8;
+        }
+        if (value === BitsPerChannelType.SIXTEEN) {
+            return 16;
+        }
+        if (value === BitsPerChannelType.THIRTYTWO) {
+            return 32;
+        }
+        return null;
+    }
+
+    function findLayerById(container, id) {
+        for (var i = 0; i < container.layers.length; i++) {
+            var layer = container.layers[i];
+            if (layer.id === id) {
+                return layer;
+            }
+            if (layer.typename === "LayerSet") {
+                var found = findLayerById(layer, id);
+                if (found) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
+
+    function findLayerByName(container, name, wantGroup) {
+        for (var i = 0; i < container.layers.length; i++) {
+            var layer = container.layers[i];
+            if (layer.name === name) {
+                if (!wantGroup || layer.typename === "LayerSet") {
+                    return layer;
+                }
+            }
+            if (layer.typename === "LayerSet") {
+                var found = findLayerByName(layer, name, wantGroup);
+                if (found) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
+
+    function getLayerBoundsPx(layer) {
+        return [
+            layer.bounds[0].as("px"),
+            layer.bounds[1].as("px"),
+            layer.bounds[2].as("px"),
+            layer.bounds[3].as("px")
+        ];
+    }
+
+    function createSelectionAll(doc) {
+        doc.selection.selectAll();
+        return { selected: "all" };
+    }
+
+    function deselectSelection(doc) {
+        doc.selection.deselect();
+        return { selected: "none" };
+    }
+
+    function invertSelection(doc) {
+        doc.selection.invert();
+        return { inverted: true };
+    }
+
+    function expandSelection(doc, params) {
+        if (!params || typeof params.amount === "undefined") {
+            throw new Error("Missing params.amount");
+        }
+        doc.selection.expand(params.amount);
+        return { expanded: params.amount };
+    }
+
+    function contractSelection(doc, params) {
+        if (!params || typeof params.amount === "undefined") {
+            throw new Error("Missing params.amount");
+        }
+        doc.selection.contract(params.amount);
+        return { contracted: params.amount };
+    }
+
+    function featherSelection(doc, params) {
+        if (!params || typeof params.radius === "undefined") {
+            throw new Error("Missing params.radius");
+        }
+        doc.selection.feather(params.radius);
+        return { feather: params.radius };
+    }
+
+    function createLayerGroup(doc, params) {
+        var group = doc.layerSets.add();
+        if (params && params.name) {
+            group.name = params.name;
+        }
+        return { name: group.name, id: group.id };
+    }
+
+    function resolveTargetGroup(doc, params) {
+        if (params && typeof params.groupId !== "undefined") {
+            var byId = findLayerById(doc, params.groupId);
+            if (byId && byId.typename === "LayerSet") {
+                return byId;
+            }
+            throw new Error("Group not found for groupId: " + params.groupId);
+        }
+        if (params && params.groupName) {
+            var byName = findLayerByName(doc, params.groupName, true);
+            if (byName) {
+                return byName;
+            }
+            throw new Error("Group not found for groupName: " + params.groupName);
+        }
+        if (doc.activeLayer && doc.activeLayer.typename === "LayerSet") {
+            return doc.activeLayer;
+        }
+        throw new Error("Missing target group (groupId/groupName or active group)");
+    }
+
+    function moveLayersIntoGroup(doc, params) {
+        var group = resolveTargetGroup(doc, params);
+        var layers = [];
+        if (params && params.layerIds && params.layerIds.length) {
+            for (var i = 0; i < params.layerIds.length; i++) {
+                var layer = findLayerById(doc, params.layerIds[i]);
+                if (layer) {
+                    layers.push(layer);
+                }
+            }
+        } else if (params && params.layerNames && params.layerNames.length) {
+            for (var j = 0; j < params.layerNames.length; j++) {
+                var layerByName = findLayerByName(doc, params.layerNames[j], false);
+                if (layerByName) {
+                    layers.push(layerByName);
+                }
+            }
+        } else if (doc.activeLayer && doc.activeLayer !== group) {
+            layers.push(doc.activeLayer);
+        }
+
+        if (layers.length === 0) {
+            throw new Error("No layers found to move into group");
+        }
+
+        for (var k = 0; k < layers.length; k++) {
+            layers[k].move(group, ElementPlacement.INSIDE);
+        }
+
+        return { moved: layers.length, groupId: group.id, groupName: group.name };
+    }
+
+    function ungroupLayerGroup(doc, params) {
+        var group = resolveTargetGroup(doc, params);
+        var parent = group.parent;
+        for (var i = group.layers.length - 1; i >= 0; i--) {
+            group.layers[i].move(group, ElementPlacement.PLACEAFTER);
+        }
+        group.remove();
+        return { ungrouped: true, parentName: parent ? parent.name : null };
+    }
+
+    function addAdjustmentLayer(doc, kind, params) {
+        var layer = doc.artLayers.add();
+        layer.kind = kind;
+        if (params && params.name) {
+            layer.name = params.name;
+        }
+        return { name: layer.name, id: layer.id, kind: layer.kind.toString() };
+    }
+
+    function addSolidFillLayer(doc, params) {
+        var r = 0, g = 0, b = 0;
+        if (params && params.color && params.color.length === 3) {
+            r = params.color[0];
+            g = params.color[1];
+            b = params.color[2];
+        }
+        var desc = new ActionDescriptor();
+        var ref = new ActionReference();
+        ref.putClass(sID("contentLayer"));
+        desc.putReference(cID("null"), ref);
+        var desc2 = new ActionDescriptor();
+        var desc3 = new ActionDescriptor();
+        desc3.putDouble(cID("Rd  "), r);
+        desc3.putDouble(cID("Grn "), g);
+        desc3.putDouble(cID("Bl  "), b);
+        desc2.putObject(cID("Clr "), sID("RGBColor"), desc3);
+        desc.putObject(cID("Usng"), sID("contentLayer"), desc2);
+        executeAction(cID("Mk  "), desc, DialogModes.NO);
+        if (params && params.name) {
+            doc.activeLayer.name = params.name;
+        }
+        return { name: doc.activeLayer.name, id: doc.activeLayer.id, kind: "solid" };
+    }
+
+    function addLevelsAdjustmentLayer(doc, params) {
+        return addAdjustmentLayer(doc, LayerKind.LEVELS, params);
+    }
+
+    function addCurvesAdjustmentLayer(doc, params) {
+        return addAdjustmentLayer(doc, LayerKind.CURVES, params);
+    }
+
+    function addHueSaturationAdjustmentLayer(doc, params) {
+        return addAdjustmentLayer(doc, LayerKind.HUESATURATION, params);
+    }
+
+    function addBlackWhiteAdjustmentLayer(doc, params) {
+        return addAdjustmentLayer(doc, LayerKind.BLACKANDWHITE, params);
+    }
+
+    function buildGradientDescriptor(params) {
+        var colorStops = [];
+        if (params && params.colors && params.colors.length >= 2) {
+            colorStops = params.colors;
+        } else {
+            colorStops = [[0, 0, 0], [255, 255, 255]];
+        }
+
+        var angle = params && typeof params.angle !== "undefined" ? params.angle : 90;
+        var scale = params && typeof params.scale !== "undefined" ? params.scale : 100;
+        var typeKey = params && params.type ? normalizeEnumKey(params.type) : "LINEAR";
+        var typeId = cID("Lnr ");
+        if (typeKey === "RADIAL") {
+            typeId = cID("Rdl ");
+        } else if (typeKey === "ANGLE") {
+            typeId = cID("Angl");
+        } else if (typeKey === "REFLECTED") {
+            typeId = cID("Rflc");
+        } else if (typeKey === "DIAMOND") {
+            typeId = cID("Dmnd");
+        }
+
+        var gradientDesc = new ActionDescriptor();
+        gradientDesc.putString(cID("Nm  "), params && params.name ? params.name : "Custom");
+        gradientDesc.putEnumerated(cID("GrdF"), cID("GrdF"), cID("CstS"));
+        gradientDesc.putDouble(cID("Intr"), 4096);
+
+        var colorsList = new ActionList();
+        for (var i = 0; i < colorStops.length; i++) {
+            var stop = new ActionDescriptor();
+            var loc = (i === 0) ? 0 : (i === colorStops.length - 1 ? 4096 : Math.round(4096 * (i / (colorStops.length - 1))));
+            stop.putInteger(cID("Lctn"), loc);
+            stop.putInteger(cID("Mdpn"), 50);
+            var c = new ActionDescriptor();
+            c.putDouble(cID("Rd  "), colorStops[i][0]);
+            c.putDouble(cID("Grn "), colorStops[i][1]);
+            c.putDouble(cID("Bl  "), colorStops[i][2]);
+            stop.putObject(cID("Clr "), cID("RGBC"), c);
+            colorsList.putObject(cID("Clrt"), stop);
+        }
+        gradientDesc.putList(cID("Clrs"), colorsList);
+
+        var transList = new ActionList();
+        var t1 = new ActionDescriptor();
+        t1.putInteger(cID("Lctn"), 0);
+        t1.putInteger(cID("Mdpn"), 50);
+        t1.putUnitDouble(cID("Opct"), cID("#Prc"), 100);
+        transList.putObject(cID("TrnS"), t1);
+        var t2 = new ActionDescriptor();
+        t2.putInteger(cID("Lctn"), 4096);
+        t2.putInteger(cID("Mdpn"), 50);
+        t2.putUnitDouble(cID("Opct"), cID("#Prc"), 100);
+        transList.putObject(cID("TrnS"), t2);
+        gradientDesc.putList(cID("Trns"), transList);
+
+        var gradientLayer = new ActionDescriptor();
+        gradientLayer.putEnumerated(cID("Type"), cID("GrdT"), typeId);
+        gradientLayer.putBoolean(cID("Dthr"), true);
+        gradientLayer.putBoolean(cID("Rvrs"), false);
+        gradientLayer.putUnitDouble(cID("Angl"), cID("#Ang"), angle);
+        gradientLayer.putUnitDouble(cID("Scl "), cID("#Prc"), scale);
+        gradientLayer.putObject(cID("Grad"), cID("Grdn"), gradientDesc);
+        return gradientLayer;
+    }
+
+    function addGradientFillLayer(doc, params) {
+        var desc = new ActionDescriptor();
+        var ref = new ActionReference();
+        ref.putClass(sID("contentLayer"));
+        desc.putReference(cID("null"), ref);
+        var desc2 = new ActionDescriptor();
+        var gradientLayer = buildGradientDescriptor(params);
+        desc2.putObject(cID("Type"), sID("gradientLayer"), gradientLayer);
+        desc.putObject(cID("Usng"), sID("contentLayer"), desc2);
+        executeAction(cID("Mk  "), desc, DialogModes.NO);
+        if (params && params.name) {
+            doc.activeLayer.name = params.name;
+        }
+        return { name: doc.activeLayer.name, id: doc.activeLayer.id, kind: "gradient" };
+    }
+
+    function addPatternFillLayer(doc, params) {
+        if (!params || (!params.patternName && !params.patternId)) {
+            throw new Error("Missing params.patternName or params.patternId");
+        }
+        var desc = new ActionDescriptor();
+        var ref = new ActionReference();
+        ref.putClass(sID("contentLayer"));
+        desc.putReference(cID("null"), ref);
+        var desc2 = new ActionDescriptor();
+        var patternLayer = new ActionDescriptor();
+        var patternDesc = new ActionDescriptor();
+        if (params && params.patternName) {
+            patternDesc.putString(cID("Nm  "), params.patternName);
+        }
+        if (params && params.patternId) {
+            patternDesc.putString(cID("Idnt"), params.patternId);
+        }
+        patternLayer.putObject(cID("Ptrn"), cID("Ptrn"), patternDesc);
+        var scale = params && typeof params.scale !== "undefined" ? params.scale : 100;
+        patternLayer.putUnitDouble(cID("Scl "), cID("#Prc"), scale);
+        patternLayer.putBoolean(cID("Algn"), true);
+        desc2.putObject(cID("Type"), sID("patternLayer"), patternLayer);
+        desc.putObject(cID("Usng"), sID("contentLayer"), desc2);
+        executeAction(cID("Mk  "), desc, DialogModes.NO);
+        if (params && params.name) {
+            doc.activeLayer.name = params.name;
+        }
+        return { name: doc.activeLayer.name, id: doc.activeLayer.id, kind: "pattern" };
+    }
+
+    function createLayerMask(doc, params) {
+        var desc = new ActionDescriptor();
+        var ref = new ActionReference();
+        ref.putClass(cID("Chnl"));
+        desc.putReference(cID("Nw  "), ref);
+        var ref2 = new ActionReference();
+        ref2.putEnumerated(cID("Chnl"), cID("Chnl"), cID("Msk "));
+        desc.putReference(cID("At  "), ref2);
+        var mode = cID("RvlA");
+        if (params && params.fromSelection) {
+            mode = cID("RvlS");
+        }
+        desc.putEnumerated(cID("Usng"), cID("UsrM"), mode);
+        executeAction(cID("Mk  "), desc, DialogModes.NO);
+        return { mask: "created" };
+    }
+
+    function deleteLayerMask(doc, params) {
+        var desc = new ActionDescriptor();
+        var ref = new ActionReference();
+        ref.putEnumerated(cID("Chnl"), cID("Chnl"), cID("Msk "));
+        desc.putReference(cID("null"), ref);
+        var apply = params && params.apply ? true : false;
+        desc.putBoolean(cID("Aply"), apply);
+        executeAction(cID("Dlt "), desc, DialogModes.NO);
+        return { mask: apply ? "applied" : "deleted" };
+    }
+
+    function applyLayerMask(doc) {
+        return deleteLayerMask(doc, { apply: true });
+    }
+
+    function invertLayerMask(doc) {
+        var desc = new ActionDescriptor();
+        var ref = new ActionReference();
+        ref.putEnumerated(cID("Chnl"), cID("Chnl"), cID("Msk "));
+        desc.putReference(cID("null"), ref);
+        executeAction(cID("slct"), desc, DialogModes.NO);
+        executeAction(cID("Invr"), undefined, DialogModes.NO);
+        var rgbDesc = new ActionDescriptor();
+        var rgbRef = new ActionReference();
+        rgbRef.putEnumerated(cID("Chnl"), cID("Chnl"), cID("RGB "));
+        rgbDesc.putReference(cID("null"), rgbRef);
+        executeAction(cID("slct"), rgbDesc, DialogModes.NO);
+        return { mask: "inverted" };
+    }
+
+    function setClippingMask(doc, params) {
+        var enabled = params && params.enabled ? true : false;
+        doc.activeLayer.grouped = enabled;
+        return { clipping: doc.activeLayer.grouped, id: doc.activeLayer.id };
+    }
+
+    function addShapeLayerRect(doc, params) {
+        if (!params || typeof params.x === "undefined" || typeof params.y === "undefined" ||
+            typeof params.width === "undefined" || typeof params.height === "undefined") {
+            throw new Error("Missing params.x/y/width/height");
+        }
+        var left = params.x;
+        var top = params.y;
+        var right = params.x + params.width;
+        var bottom = params.y + params.height;
+        var color = params.color && params.color.length === 3 ? params.color : [0, 0, 0];
+
+        var desc = new ActionDescriptor();
+        var ref = new ActionReference();
+        ref.putClass(sID("contentLayer"));
+        desc.putReference(cID("null"), ref);
+        var desc2 = new ActionDescriptor();
+        var shapeDesc = new ActionDescriptor();
+        shapeDesc.putUnitDouble(cID("Top "), cID("#Pxl"), top);
+        shapeDesc.putUnitDouble(cID("Left"), cID("#Pxl"), left);
+        shapeDesc.putUnitDouble(cID("Btom"), cID("#Pxl"), bottom);
+        shapeDesc.putUnitDouble(cID("Rght"), cID("#Pxl"), right);
+        desc2.putObject(cID("Shp "), cID("Rctn"), shapeDesc);
+        var fillDesc = new ActionDescriptor();
+        var rgb = new ActionDescriptor();
+        rgb.putDouble(cID("Rd  "), color[0]);
+        rgb.putDouble(cID("Grn "), color[1]);
+        rgb.putDouble(cID("Bl  "), color[2]);
+        fillDesc.putObject(cID("Clr "), cID("RGBC"), rgb);
+        desc2.putObject(cID("Type"), sID("solidColorLayer"), fillDesc);
+        desc.putObject(cID("Usng"), sID("contentLayer"), desc2);
+        executeAction(cID("Mk  "), desc, DialogModes.NO);
+        if (params.name) {
+            doc.activeLayer.name = params.name;
+        }
+        return { name: doc.activeLayer.name, id: doc.activeLayer.id, kind: "shape_rect" };
+    }
+
+    function addShapeLayerEllipse(doc, params) {
+        if (!params || typeof params.x === "undefined" || typeof params.y === "undefined" ||
+            typeof params.width === "undefined" || typeof params.height === "undefined") {
+            throw new Error("Missing params.x/y/width/height");
+        }
+        var left = params.x;
+        var top = params.y;
+        var right = params.x + params.width;
+        var bottom = params.y + params.height;
+        var color = params.color && params.color.length === 3 ? params.color : [0, 0, 0];
+
+        var desc = new ActionDescriptor();
+        var ref = new ActionReference();
+        ref.putClass(sID("contentLayer"));
+        desc.putReference(cID("null"), ref);
+        var desc2 = new ActionDescriptor();
+        var shapeDesc = new ActionDescriptor();
+        shapeDesc.putUnitDouble(cID("Top "), cID("#Pxl"), top);
+        shapeDesc.putUnitDouble(cID("Left"), cID("#Pxl"), left);
+        shapeDesc.putUnitDouble(cID("Btom"), cID("#Pxl"), bottom);
+        shapeDesc.putUnitDouble(cID("Rght"), cID("#Pxl"), right);
+        desc2.putObject(cID("Shp "), cID("Elps"), shapeDesc);
+        var fillDesc = new ActionDescriptor();
+        var rgb = new ActionDescriptor();
+        rgb.putDouble(cID("Rd  "), color[0]);
+        rgb.putDouble(cID("Grn "), color[1]);
+        rgb.putDouble(cID("Bl  "), color[2]);
+        fillDesc.putObject(cID("Clr "), cID("RGBC"), rgb);
+        desc2.putObject(cID("Type"), sID("solidColorLayer"), fillDesc);
+        desc.putObject(cID("Usng"), sID("contentLayer"), desc2);
+        executeAction(cID("Mk  "), desc, DialogModes.NO);
+        if (params.name) {
+            doc.activeLayer.name = params.name;
+        }
+        return { name: doc.activeLayer.name, id: doc.activeLayer.id, kind: "shape_ellipse" };
+    }
+
+    function transformActiveLayer(doc, params) {
+        if (!params) {
+            throw new Error("Missing params");
+        }
+        var layer = doc.activeLayer;
+        if (typeof params.scaleX !== "undefined" || typeof params.scaleY !== "undefined") {
+            var scaleX = typeof params.scaleX !== "undefined" ? params.scaleX : 100;
+            var scaleY = typeof params.scaleY !== "undefined" ? params.scaleY : 100;
+            layer.resize(scaleX, scaleY, AnchorPosition.MIDDLECENTER);
+        }
+        if (typeof params.rotate !== "undefined") {
+            layer.rotate(params.rotate, AnchorPosition.MIDDLECENTER);
+        }
+        if (typeof params.offsetX !== "undefined" || typeof params.offsetY !== "undefined") {
+            var dx = typeof params.offsetX !== "undefined" ? params.offsetX : 0;
+            var dy = typeof params.offsetY !== "undefined" ? params.offsetY : 0;
+            layer.translate(dx, dy);
+        }
+        return { transformed: true, id: layer.id };
+    }
+
+    function flipActiveLayer(doc, direction) {
+        var layer = doc.activeLayer;
+        if (direction === "horizontal") {
+            layer.resize(-100, 100, AnchorPosition.MIDDLECENTER);
+        } else {
+            layer.resize(100, -100, AnchorPosition.MIDDLECENTER);
+        }
+        return { flipped: direction, id: layer.id };
+    }
+
+    function alignLayers(doc, params) {
+        if (!params || !params.layerIds || params.layerIds.length === 0) {
+            throw new Error("Missing params.layerIds");
+        }
+        var mode = normalizeEnumKey(params.mode || "LEFT");
+        var reference = normalizeEnumKey(params.reference || "FIRST");
+        var layers = [];
+        for (var i = 0; i < params.layerIds.length; i++) {
+            var layer = findLayerById(doc, params.layerIds[i]);
+            if (layer) {
+                layers.push(layer);
+            }
+        }
+        if (layers.length === 0) {
+            throw new Error("No layers found to align");
+        }
+        var refBounds;
+        if (reference === "DOCUMENT") {
+            refBounds = [0, 0, doc.width.as("px"), doc.height.as("px")];
+        } else {
+            refBounds = getLayerBoundsPx(layers[0]);
+        }
+        for (var j = 0; j < layers.length; j++) {
+            if (reference !== "DOCUMENT" && j === 0) {
+                continue;
+            }
+            var b = getLayerBoundsPx(layers[j]);
+            var dx = 0;
+            var dy = 0;
+            if (mode === "LEFT") {
+                dx = refBounds[0] - b[0];
+            } else if (mode === "RIGHT") {
+                dx = refBounds[2] - b[2];
+            } else if (mode === "CENTER_HORIZONTAL") {
+                dx = (refBounds[0] + refBounds[2]) / 2 - (b[0] + b[2]) / 2;
+            } else if (mode === "TOP") {
+                dy = refBounds[1] - b[1];
+            } else if (mode === "BOTTOM") {
+                dy = refBounds[3] - b[3];
+            } else if (mode === "CENTER_VERTICAL") {
+                dy = (refBounds[1] + refBounds[3]) / 2 - (b[1] + b[3]) / 2;
+            } else {
+                throw new Error("Unsupported align mode: " + params.mode);
+            }
+            layers[j].translate(dx, dy);
+        }
+        return { aligned: layers.length, mode: params.mode || "LEFT" };
+    }
+
+    function distributeLayers(doc, params) {
+        if (!params || !params.layerIds || params.layerIds.length < 3) {
+            throw new Error("Need at least 3 layers to distribute");
+        }
+        var axis = normalizeEnumKey(params.axis || "HORIZONTAL");
+        var layers = [];
+        for (var i = 0; i < params.layerIds.length; i++) {
+            var layer = findLayerById(doc, params.layerIds[i]);
+            if (layer) {
+                layers.push(layer);
+            }
+        }
+        if (layers.length < 3) {
+            throw new Error("No layers found to distribute");
+        }
+        var items = [];
+        for (var j = 0; j < layers.length; j++) {
+            var b = getLayerBoundsPx(layers[j]);
+            var cx = (b[0] + b[2]) / 2;
+            var cy = (b[1] + b[3]) / 2;
+            items.push({ layer: layers[j], bounds: b, cx: cx, cy: cy });
+        }
+        items.sort(function (a, b) {
+            return axis === "VERTICAL" ? a.cy - b.cy : a.cx - b.cx;
+        });
+        var min = axis === "VERTICAL" ? items[0].cy : items[0].cx;
+        var max = axis === "VERTICAL" ? items[items.length - 1].cy : items[items.length - 1].cx;
+        var step = (max - min) / (items.length - 1);
+        for (var k = 0; k < items.length; k++) {
+            var target = min + step * k;
+            var dx = 0;
+            var dy = 0;
+            if (axis === "VERTICAL") {
+                dy = target - items[k].cy;
+            } else {
+                dx = target - items[k].cx;
+            }
+            items[k].layer.translate(dx, dy);
+        }
+        return { distributed: items.length, axis: params.axis || "HORIZONTAL" };
+    }
+
+    function placeImageAsLayer(doc, params) {
+        if (!params || !params.path) {
+            throw new Error("Missing params.path");
+        }
+        var file = new File(params.path);
+        if (!file.exists) {
+            throw new Error("File not found: " + params.path);
+        }
+        var desc = new ActionDescriptor();
+        desc.putPath(cID("null"), file);
+        desc.putEnumerated(cID("FTcs"), cID("QCSt"), cID("Qcsa"));
+        desc.putUnitDouble(cID("Wdth"), cID("#Prc"), 100);
+        desc.putUnitDouble(cID("Hght"), cID("#Prc"), 100);
+        executeAction(cID("Plc "), desc, DialogModes.NO);
+        if (params.name) {
+            doc.activeLayer.name = params.name;
+        }
+        return { placed: true, name: doc.activeLayer.name, id: doc.activeLayer.id };
+    }
+
+    function exportActiveDocument(doc, params) {
+        if (!params || !params.path || !params.format) {
+            throw new Error("Missing params.path or params.format");
+        }
+        var file = new File(params.path);
+        var formatKey = normalizeEnumKey(params.format);
+        if (formatKey === "PNG") {
+            var pngOpts = new ExportOptionsSaveForWeb();
+            pngOpts.format = SaveDocumentType.PNG;
+            pngOpts.PNG8 = false;
+            pngOpts.transparency = true;
+            doc.exportDocument(file, ExportType.SAVEFORWEB, pngOpts);
+            return { exported: true, path: file.fsName, format: "png" };
+        }
+        if (formatKey === "JPG" || formatKey === "JPEG") {
+            var jpgOpts = new ExportOptionsSaveForWeb();
+            jpgOpts.format = SaveDocumentType.JPEG;
+            if (params && typeof params.quality !== "undefined") {
+                jpgOpts.quality = params.quality;
+            }
+            doc.exportDocument(file, ExportType.SAVEFORWEB, jpgOpts);
+            return { exported: true, path: file.fsName, format: "jpg" };
+        }
+        if (formatKey === "WEBP") {
+            if (typeof WebPSaveOptions === "undefined") {
+                throw new Error("WebP export not supported in this Photoshop version");
+            }
+            var webpOpts = new WebPSaveOptions();
+            if (params && typeof params.quality !== "undefined") {
+                webpOpts.quality = params.quality;
+            }
+            doc.saveAs(file, webpOpts, true, Extension.LOWERCASE);
+            return { exported: true, path: file.fsName, format: "webp" };
+        }
+        throw new Error("Unsupported export format: " + params.format);
+    }
+
+    function historyUndo() {
+        executeAction(cID("undo"), undefined, DialogModes.NO);
+        return { undo: true };
+    }
+
+    function historyRedo() {
+        executeAction(cID("redo"), undefined, DialogModes.NO);
+        return { redo: true };
     }
 
     function createDocument(params) {
@@ -580,6 +1239,74 @@
             response.data = setActiveLayerOpacity(app.activeDocument, request.params);
         } else if (command === "set_active_layer_blend_mode") {
             response.data = setActiveLayerBlendMode(app.activeDocument, request.params);
+        } else if (command === "select_all") {
+            response.data = createSelectionAll(app.activeDocument);
+        } else if (command === "deselect") {
+            response.data = deselectSelection(app.activeDocument);
+        } else if (command === "invert_selection") {
+            response.data = invertSelection(app.activeDocument);
+        } else if (command === "expand_selection") {
+            response.data = expandSelection(app.activeDocument, request.params);
+        } else if (command === "contract_selection") {
+            response.data = contractSelection(app.activeDocument, request.params);
+        } else if (command === "feather_selection") {
+            response.data = featherSelection(app.activeDocument, request.params);
+        } else if (command === "create_layer_group") {
+            response.data = createLayerGroup(app.activeDocument, request.params);
+        } else if (command === "move_layers_to_group") {
+            response.data = moveLayersIntoGroup(app.activeDocument, request.params);
+        } else if (command === "ungroup_layer_group") {
+            response.data = ungroupLayerGroup(app.activeDocument, request.params);
+        } else if (command === "add_levels_adjustment_layer") {
+            response.data = addLevelsAdjustmentLayer(app.activeDocument, request.params);
+        } else if (command === "add_curves_adjustment_layer") {
+            response.data = addCurvesAdjustmentLayer(app.activeDocument, request.params);
+        } else if (command === "add_hue_saturation_adjustment_layer") {
+            response.data = addHueSaturationAdjustmentLayer(app.activeDocument, request.params);
+        } else if (command === "add_black_white_adjustment_layer") {
+            response.data = addBlackWhiteAdjustmentLayer(app.activeDocument, request.params);
+        } else if (command === "add_solid_fill_layer") {
+            response.data = addSolidFillLayer(app.activeDocument, request.params);
+        } else if (command === "add_gradient_fill_layer") {
+            response.data = addGradientFillLayer(app.activeDocument, request.params);
+        } else if (command === "add_pattern_fill_layer") {
+            response.data = addPatternFillLayer(app.activeDocument, request.params);
+        } else if (command === "create_layer_mask") {
+            response.data = createLayerMask(app.activeDocument, request.params);
+        } else if (command === "apply_layer_mask") {
+            response.data = applyLayerMask(app.activeDocument);
+        } else if (command === "delete_layer_mask") {
+            response.data = deleteLayerMask(app.activeDocument, request.params);
+        } else if (command === "invert_layer_mask") {
+            response.data = invertLayerMask(app.activeDocument);
+        } else if (command === "set_clipping_mask") {
+            response.data = setClippingMask(app.activeDocument, request.params);
+        } else if (command === "create_clipping_mask") {
+            response.data = setClippingMask(app.activeDocument, { enabled: true });
+        } else if (command === "release_clipping_mask") {
+            response.data = setClippingMask(app.activeDocument, { enabled: false });
+        } else if (command === "add_shape_rect") {
+            response.data = addShapeLayerRect(app.activeDocument, request.params);
+        } else if (command === "add_shape_ellipse") {
+            response.data = addShapeLayerEllipse(app.activeDocument, request.params);
+        } else if (command === "transform_active_layer") {
+            response.data = transformActiveLayer(app.activeDocument, request.params);
+        } else if (command === "flip_active_layer_horizontal") {
+            response.data = flipActiveLayer(app.activeDocument, "horizontal");
+        } else if (command === "flip_active_layer_vertical") {
+            response.data = flipActiveLayer(app.activeDocument, "vertical");
+        } else if (command === "align_layers") {
+            response.data = alignLayers(app.activeDocument, request.params);
+        } else if (command === "distribute_layers") {
+            response.data = distributeLayers(app.activeDocument, request.params);
+        } else if (command === "place_image_as_layer") {
+            response.data = placeImageAsLayer(app.activeDocument, request.params);
+        } else if (command === "export_document") {
+            response.data = exportActiveDocument(app.activeDocument, request.params);
+        } else if (command === "history_undo") {
+            response.data = historyUndo();
+        } else if (command === "history_redo") {
+            response.data = historyRedo();
         } else {
             throw new Error("Unknown command: " + command);
         }

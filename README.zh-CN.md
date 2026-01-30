@@ -108,7 +108,7 @@ Photoshop 技能包位于 `skills/photoshop-jsx-scripting`，包含：
 
 **健康检查与信息获取**
 - `ping`（验证 JSX 桥接与 JSON 请求/响应链路）
-- `get_document_info`（文档尺寸、模式、元数据）
+- `get_document_info`（文档尺寸、模式、色彩配置、位深）
 - `list_layers`（图层列表、ID 与可见性）
 - `list_fonts`（可用字体列表）
 
@@ -137,6 +137,62 @@ Photoshop 技能包位于 `skills/photoshop-jsx-scripting`，包含：
 - `set_active_layer_visibility`（切换当前图层可见性）
 - `set_active_layer_opacity`（设置当前图层不透明度）
 - `set_active_layer_blend_mode`（设置当前图层混合模式）
+
+**选择与选区**
+- `select_all`（全选）
+- `deselect`（取消选择）
+- `invert_selection`（反选）
+- `expand_selection`（扩展选区，`amount` 像素）
+- `contract_selection`（收缩选区，`amount` 像素）
+- `feather_selection`（羽化选区，`radius` 像素）
+
+**图层组**
+- `create_layer_group`（创建图层组，`name` 可选）
+- `move_layers_to_group`（移动图层到组，`groupId/groupName` + `layerIds/layerNames`）
+- `ungroup_layer_group`（解组，`groupId/groupName` 可选）
+
+**调整图层**
+- `add_levels_adjustment_layer`（色阶，`name` 可选）
+- `add_curves_adjustment_layer`（曲线，`name` 可选）
+- `add_hue_saturation_adjustment_layer`（色相/饱和度，`name` 可选）
+- `add_black_white_adjustment_layer`（黑白，`name` 可选）
+
+**填充图层**
+- `add_solid_fill_layer`（纯色填充，`color` 可选）
+- `add_gradient_fill_layer`（渐变填充，`colors/angle/scale/type` 可选）
+- `add_pattern_fill_layer`（图案填充，`patternName/patternId` 必选其一）
+
+**图层蒙版**
+- `create_layer_mask`（创建蒙版，`fromSelection` 可选）
+- `apply_layer_mask`（应用蒙版）
+- `delete_layer_mask`（删除蒙版，`apply` 可选）
+- `invert_layer_mask`（反相蒙版）
+
+**剪贴蒙版**
+- `set_clipping_mask`（设置剪贴蒙版，`enabled` 必填）
+- `create_clipping_mask`（创建剪贴蒙版）
+- `release_clipping_mask`（释放剪贴蒙版）
+
+**形状图层**
+- `add_shape_rect`（矩形，`x/y/width/height` 必填，`color` 可选）
+- `add_shape_ellipse`（椭圆，`x/y/width/height` 必填，`color` 可选）
+
+**变换**
+- `transform_active_layer`（缩放/旋转/位移，`scaleX/scaleY/rotate/offsetX/offsetY`）
+- `flip_active_layer_horizontal`（水平翻转）
+- `flip_active_layer_vertical`（垂直翻转）
+
+**对齐与分布**
+- `align_layers`（对齐，`layerIds` 必填，`mode/reference` 可选）
+- `distribute_layers`（分布，`layerIds` 至少 3 个，`axis` 可选）
+
+**导入与导出**
+- `place_image_as_layer`（置入图像为图层，`path` 必填，`name` 可选）
+- `export_document`（导出 `png/jpg/webp`，`path/format` 必填）
+
+**历史记录**
+- `history_undo`（撤销）
+- `history_redo`（重做）
 
 ## 官方文档来源
 
