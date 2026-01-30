@@ -77,6 +77,20 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 - `save_active_document_as`：保存到指定路径/格式。
 - `delete_active_layer`：删除当前图层。
 
+## 自然语言入口 / Natural Language Entry
+
+使用自然语言入口把描述转换成命令并执行：
+
+```bash
+./skills/photoshop-jsx-scripting/scripts/ps_nl.sh "创建一个 1200x800 的 RGB 文档，命名为 Hero"
+```
+
+通过 `PS_LLM_CMD` 覆盖 LLM 命令（默认使用可用的 `codex exec`）：
+
+```bash
+PS_LLM_CMD="codex exec" ./skills/photoshop-jsx-scripting/scripts/ps_nl.sh "列出图层"
+```
+
 ### 配置覆盖
 
 默认情况下脚本会在当前目录读写 `skills/photoshop-jsx-scripting/scripts/ps_request.json` / `skills/photoshop-jsx-scripting/scripts/ps_response.json`。如需自定义路径，可设置：

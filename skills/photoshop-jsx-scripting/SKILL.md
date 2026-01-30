@@ -12,6 +12,8 @@ Use this skill to drive Photoshop with ExtendScript/JSX, look up DOM objects/met
 - Run a command through the bridge: `./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"ping"}'`
 - Read responses from: `skills/photoshop-jsx-scripting/scripts/ps_response.json`
 - Add or update commands in: `skills/photoshop-jsx-scripting/scripts/ps_agent.jsx`
+- Route natural-language instructions: `./skills/photoshop-jsx-scripting/scripts/ps_nl.sh "create a 1200x800 RGB document"`
+  - Override the LLM command with `PS_LLM_CMD` (defaults to `codex exec` if available).
 
 ## Built-in commands
 - `ping` (health check)

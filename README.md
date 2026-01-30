@@ -77,6 +77,20 @@ Example command meanings:
 - `save_active_document_as`: Save the active document to a specific file format.
 - `delete_active_layer`: Delete the active layer.
 
+## 自然语言入口 / Natural Language Entry
+
+Use the natural-language router to translate a free-form instruction into a command and run it:
+
+```bash
+./skills/photoshop-jsx-scripting/scripts/ps_nl.sh "create a 1200x800 RGB document named Hero"
+```
+
+Override the LLM command with `PS_LLM_CMD` (defaults to `codex exec` if available):
+
+```bash
+PS_LLM_CMD="codex exec" ./skills/photoshop-jsx-scripting/scripts/ps_nl.sh "list layers"
+```
+
 ### Config overrides
 
 By default the scripts read/write `skills/photoshop-jsx-scripting/scripts/ps_request.json` and `skills/photoshop-jsx-scripting/scripts/ps_response.json` next to the scripts. If you need custom paths (for example, when the files live in a synced folder), set:
