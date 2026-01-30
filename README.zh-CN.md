@@ -71,6 +71,28 @@ Photoshop 技能包位于 `skills/photoshop-jsx-scripting`，包含：
 - 如何新增命令到 `ps_agent.jsx`。
 - 当 DOM API 不足时如何使用 Action Manager。
 
+## 当前已支持的操作
+
+以下是 `ps_agent.jsx` 目前已经实现的 Photoshop 操作：
+
+**健康检查与信息获取**
+- `ping`
+- `get_document_info`
+- `list_layers`
+- `list_fonts`
+
+**文字相关**
+- `add_text_layer`（设置文字内容、字体、字号、颜色、位置）
+
+**图层管理**
+- `merge_active_down`
+- `merge_visible_layers`
+- `duplicate_active_layer`
+- `delete_active_layer`
+- `rename_active_layer`
+- `set_active_layer_visibility`
+- `set_active_layer_opacity`
+
 ## 官方文档来源
 
 以下是用于映射 Photoshop 脚本 API 的官方来源：

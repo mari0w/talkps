@@ -71,6 +71,28 @@ The Photoshop skill lives in `skills/photoshop-jsx-scripting`. It documents:
 - How to add new commands to `ps_agent.jsx`.
 - How to fall back to Action Manager code when DOM APIs are missing.
 
+## Supported operations (current)
+
+These are the Photoshop operations currently implemented in `ps_agent.jsx`:
+
+**Health & inspection**
+- `ping`
+- `get_document_info`
+- `list_layers`
+- `list_fonts`
+
+**Text**
+- `add_text_layer` (set text content, font, size, color, position)
+
+**Layer management**
+- `merge_active_down`
+- `merge_visible_layers`
+- `duplicate_active_layer`
+- `delete_active_layer`
+- `rename_active_layer`
+- `set_active_layer_visibility`
+- `set_active_layer_opacity`
+
 ## Official documentation sources
 
 These are the primary sources used to map commands to Photoshop scripting APIs:
