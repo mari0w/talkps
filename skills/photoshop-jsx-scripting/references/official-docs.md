@@ -18,13 +18,7 @@
 ## Platform and API landscape
 - Photoshop APIs for Developers (Adobe)
   - https://developer.adobe.com/photoshop/
-  - Overview of UXP vs ExtendScript vs legacy technologies.
-- Legacy Extensibility (Adobe)
-  - https://developer.adobe.com/photoshop/uxp/2022/guides/legacy-extensibility/
-  - ExtendScript support and migration notes.
-- UXP Scripting in Photoshop
-  - https://developer.adobe.com/photoshop/uxp/2022/ps_reference/media/uxpscripting/
-  - If you want .psjs (UXP) scripts instead of JSX.
+  - General platform overview and legacy extensibility notes.
 
 ## Installed resources (when available)
 - Photoshop installs scripting docs under `Scripting/Documents`.
@@ -33,3 +27,5 @@
 ## How to use these docs
 - Start with the JavaScript Reference to find the exact class/property/method.
 - Use the Scripting Guide for Action Manager patterns and ScriptListener usage.
+- When searching PDFs, look for the class name (e.g., `ArtLayer`, `Document`, `LayerSet`).
+- If a feature is missing from the DOM, use ScriptListener to capture the action and translate it to ExtendScript.

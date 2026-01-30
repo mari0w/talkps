@@ -1,10 +1,11 @@
 #!/bin/zsh
 set -euo pipefail
 
-request_file="/Users/charles/photoshop/ps_request.json"
-response_file="/Users/charles/photoshop/ps_response.json"
-agent_jsx="/Users/charles/photoshop/ps_agent.jsx"
-runner="/Users/charles/photoshop/run_ps.sh"
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+request_file="${PS_REQUEST_FILE:-$script_dir/ps_request.json}"
+response_file="${PS_RESPONSE_FILE:-$script_dir/ps_response.json}"
+agent_jsx="${PS_AGENT_JSX:-$script_dir/ps_agent.jsx}"
+runner="${PS_RUNNER:-$script_dir/run_ps.sh}"
 
 if [[ $# -lt 1 ]]; then
   echo "Usage: $0 '{\"command\":\"list_layers\"}'" >&2
