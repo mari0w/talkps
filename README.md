@@ -156,6 +156,7 @@ These are the Photoshop operations currently implemented in `skills/photoshop-js
 - `set_active_layer_visibility` (toggle visibility for the active layer)
 - `set_active_layer_opacity` (set the active layer opacity)
 - `set_active_layer_blend_mode` (set the active layer blend mode)
+- `set_layer_style` (set layer effects like shadows, glows, strokes, overlays)
 
 ## Official documentation sources
 

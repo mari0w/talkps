@@ -135,6 +135,31 @@
         return value && value.constructor === Array;
     }
 
+    function resolveColorArray(value, fallback) {
+        if (value && value.length === 3) {
+            return [value[0], value[1], value[2]];
+        }
+        return fallback ? [fallback[0], fallback[1], fallback[2]] : [0, 0, 0];
+    }
+
+    function rgbArrayToSolidColor(value, fallback) {
+        var rgb = resolveColorArray(value, fallback);
+        var c = new SolidColor();
+        c.rgb.red = rgb[0];
+        c.rgb.green = rgb[1];
+        c.rgb.blue = rgb[2];
+        return c;
+    }
+
+    function rgbArrayToDescriptor(value, fallback) {
+        var rgb = resolveColorArray(value, fallback);
+        var desc = new ActionDescriptor();
+        desc.putDouble(cID("Rd  "), rgb[0]);
+        desc.putDouble(cID("Grn "), rgb[1]);
+        desc.putDouble(cID("Bl  "), rgb[2]);
+        return desc;
+    }
+
     function stringify(value) {
         if (value === null || value === undefined) {
             return "null";
@@ -304,6 +329,36 @@
             return BlendMode[key];
         }
         throw new Error("Unsupported blend mode: " + value);
+    }
+
+    function mapBlendModeToTypeId(value) {
+        var key = normalizeEnumKey(value || "NORMAL");
+        if (key === "NORMAL") { return sID("normal"); }
+        if (key === "MULTIPLY") { return sID("multiply"); }
+        if (key === "SCREEN") { return sID("screen"); }
+        if (key === "OVERLAY") { return sID("overlay"); }
+        if (key === "SOFT_LIGHT") { return sID("softLight"); }
+        if (key === "HARD_LIGHT") { return sID("hardLight"); }
+        if (key === "COLOR_DODGE") { return sID("colorDodge"); }
+        if (key === "COLOR_BURN") { return sID("colorBurn"); }
+        if (key === "LINEAR_DODGE" || key === "ADD") { return sID("linearDodge"); }
+        if (key === "LINEAR_BURN") { return sID("linearBurn"); }
+        if (key === "VIVID_LIGHT") { return sID("vividLight"); }
+        if (key === "LINEAR_LIGHT") { return sID("linearLight"); }
+        if (key === "PIN_LIGHT") { return sID("pinLight"); }
+        if (key === "HARD_MIX") { return sID("hardMix"); }
+        if (key === "DIFFERENCE") { return sID("difference"); }
+        if (key === "EXCLUSION") { return sID("exclusion"); }
+        if (key === "HUE") { return sID("hue"); }
+        if (key === "SATURATION") { return sID("saturation"); }
+        if (key === "COLOR") { return sID("color"); }
+        if (key === "LUMINOSITY") { return sID("luminosity"); }
+        if (key === "DARKEN") { return sID("darken"); }
+        if (key === "LIGHTEN") { return sID("lighten"); }
+        if (key === "DARKEN_COLOR") { return sID("darkerColor"); }
+        if (key === "LIGHTEN_COLOR") { return sID("lighterColor"); }
+        if (key === "DISSOLVE") { return sID("dissolve"); }
+        return sID("normal");
     }
 
     function mapResampleMethod(value) {
@@ -494,10 +549,7 @@
         if (!params || !params.color || params.color.length !== 3) {
             throw new Error("Missing params.color");
         }
-        var c = new SolidColor();
-        c.rgb.red = params.color[0];
-        c.rgb.green = params.color[1];
-        c.rgb.blue = params.color[2];
+        var c = rgbArrayToSolidColor(params.color, [0, 0, 0]);
         app.foregroundColor = c;
         return { color: [c.rgb.red, c.rgb.green, c.rgb.blue] };
     }
@@ -600,6 +652,340 @@
         }
         doc.activeLayer.applyStyle(params.styleName);
         return { applied: params.styleName, id: doc.activeLayer.id };
+    }
+
+    function resolveBool(value, fallback) {
+        if (typeof value === "undefined" || value === null) {
+            return fallback;
+        }
+        return value ? true : false;
+    }
+
+    function resolveNumber(value, fallback) {
+        if (typeof value === "undefined" || value === null) {
+            return fallback;
+        }
+        return value;
+    }
+
+    function putPercent(desc, key, value) {
+        if (typeof value !== "undefined" && value !== null) {
+            desc.putUnitDouble(sID(key), cID("#Prc"), value);
+        }
+    }
+
+    function putPixels(desc, key, value) {
+        if (typeof value !== "undefined" && value !== null) {
+            desc.putUnitDouble(sID(key), cID("#Pxl"), value);
+        }
+    }
+
+    function putAngle(desc, key, value) {
+        if (typeof value !== "undefined" && value !== null) {
+            desc.putUnitDouble(sID(key), cID("#Ang"), value);
+        }
+    }
+
+    function mapGlowTechnique(value) {
+        var key = normalizeEnumKey(value || "SOFTER");
+        if (key === "PRECISE") {
+            return sID("precise");
+        }
+        return sID("softer");
+    }
+
+    function mapGlowSource(value) {
+        var key = normalizeEnumKey(value || "EDGE");
+        if (key === "CENTER") {
+            return sID("center");
+        }
+        return sID("edge");
+    }
+
+    function mapStrokePosition(value) {
+        var key = normalizeEnumKey(value || "OUTSIDE");
+        if (key === "INSIDE") {
+            return sID("insetFrame");
+        }
+        if (key === "CENTER" || key === "CENTERED") {
+            return sID("centeredFrame");
+        }
+        return sID("outsetFrame");
+    }
+
+    function mapGradientType(value) {
+        var key = normalizeEnumKey(value || "LINEAR");
+        if (key === "RADIAL") {
+            return sID("radial");
+        }
+        if (key === "ANGLE") {
+            return sID("angle");
+        }
+        if (key === "REFLECTED") {
+            return sID("reflected");
+        }
+        if (key === "DIAMOND") {
+            return sID("diamond");
+        }
+        return sID("linear");
+    }
+
+    function mapBevelStyle(value) {
+        var key = normalizeEnumKey(value || "INNER_BEVEL");
+        if (key === "OUTER_BEVEL") { return sID("outerBevel"); }
+        if (key === "EMBOSS") { return sID("emboss"); }
+        if (key === "PILLOW_EMBOSS") { return sID("pillowEmboss"); }
+        if (key === "STROKE_EMBOSS") { return sID("strokeEmboss"); }
+        return sID("innerBevel");
+    }
+
+    function mapBevelTechnique(value) {
+        var key = normalizeEnumKey(value || "SMOOTH");
+        if (key === "CHISEL_HARD") { return sID("chiselHard"); }
+        if (key === "CHISEL_SOFT") { return sID("chiselSoft"); }
+        return sID("smooth");
+    }
+
+    function mapBevelDirection(value) {
+        var key = normalizeEnumKey(value || "UP");
+        if (key === "DOWN") {
+            return sID("down");
+        }
+        return sID("up");
+    }
+
+    function buildShadowDescriptor(params, defaults) {
+        var p = params || {};
+        var d = new ActionDescriptor();
+        d.putBoolean(sID("enabled"), resolveBool(p.enabled, defaults.enabled));
+        d.putBoolean(sID("present"), true);
+        d.putBoolean(sID("showInDialog"), true);
+        d.putEnumerated(sID("mode"), sID("blendMode"), mapBlendModeToTypeId(p.blendMode || defaults.blendMode));
+        putPercent(d, "opacity", resolveNumber(p.opacity, defaults.opacity));
+        putAngle(d, "angle", resolveNumber(p.angle, defaults.angle));
+        d.putBoolean(sID("useGlobalAngle"), resolveBool(p.useGlobalAngle, defaults.useGlobalAngle));
+        putPixels(d, "distance", resolveNumber(p.distance, defaults.distance));
+        var choke = resolveNumber(typeof p.choke !== "undefined" ? p.choke : p.spread, defaults.choke);
+        putPercent(d, "chokeMatte", choke);
+        putPixels(d, "blur", resolveNumber(p.size, defaults.size));
+        putPercent(d, "noise", resolveNumber(p.noise, defaults.noise));
+        d.putObject(sID("color"), cID("RGBC"), rgbArrayToDescriptor(p.color, defaults.color));
+        return d;
+    }
+
+    function buildGlowDescriptor(params, defaults, isInner) {
+        var p = params || {};
+        var d = new ActionDescriptor();
+        d.putBoolean(sID("enabled"), resolveBool(p.enabled, defaults.enabled));
+        d.putBoolean(sID("present"), true);
+        d.putBoolean(sID("showInDialog"), true);
+        d.putEnumerated(sID("mode"), sID("blendMode"), mapBlendModeToTypeId(p.blendMode || defaults.blendMode));
+        putPercent(d, "opacity", resolveNumber(p.opacity, defaults.opacity));
+        d.putEnumerated(sID("technique"), sID("glowTechnique"), mapGlowTechnique(p.technique || defaults.technique));
+        if (isInner) {
+            d.putEnumerated(sID("glowSource"), sID("glowSource"), mapGlowSource(p.source || defaults.source));
+        }
+        var choke = resolveNumber(typeof p.choke !== "undefined" ? p.choke : p.spread, defaults.choke);
+        putPercent(d, "chokeMatte", choke);
+        putPixels(d, "blur", resolveNumber(p.size, defaults.size));
+        putPercent(d, "noise", resolveNumber(p.noise, defaults.noise));
+        if (typeof p.range !== "undefined" || typeof defaults.range !== "undefined") {
+            putPercent(d, "range", resolveNumber(p.range, defaults.range));
+        }
+        d.putObject(sID("color"), cID("RGBC"), rgbArrayToDescriptor(p.color, defaults.color));
+        return d;
+    }
+
+    function buildStrokeDescriptor(params, defaults) {
+        var p = params || {};
+        var d = new ActionDescriptor();
+        d.putBoolean(sID("enabled"), resolveBool(p.enabled, defaults.enabled));
+        d.putBoolean(sID("present"), true);
+        d.putBoolean(sID("showInDialog"), true);
+        d.putEnumerated(sID("mode"), sID("blendMode"), mapBlendModeToTypeId(p.blendMode || defaults.blendMode));
+        putPercent(d, "opacity", resolveNumber(p.opacity, defaults.opacity));
+        putPixels(d, "size", resolveNumber(p.size, defaults.size));
+        d.putEnumerated(sID("style"), sID("frameStyle"), mapStrokePosition(p.position || defaults.position));
+        d.putObject(sID("color"), cID("RGBC"), rgbArrayToDescriptor(p.color, defaults.color));
+        return d;
+    }
+
+    function buildColorOverlayDescriptor(params, defaults) {
+        var p = params || {};
+        var d = new ActionDescriptor();
+        d.putBoolean(sID("enabled"), resolveBool(p.enabled, defaults.enabled));
+        d.putBoolean(sID("present"), true);
+        d.putBoolean(sID("showInDialog"), true);
+        d.putEnumerated(sID("mode"), sID("blendMode"), mapBlendModeToTypeId(p.blendMode || defaults.blendMode));
+        putPercent(d, "opacity", resolveNumber(p.opacity, defaults.opacity));
+        d.putObject(sID("color"), cID("RGBC"), rgbArrayToDescriptor(p.color, defaults.color));
+        return d;
+    }
+
+    function buildGradientOverlayDescriptor(params, defaults) {
+        var p = params || {};
+        var d = new ActionDescriptor();
+        d.putBoolean(sID("enabled"), resolveBool(p.enabled, defaults.enabled));
+        d.putBoolean(sID("present"), true);
+        d.putBoolean(sID("showInDialog"), true);
+        d.putEnumerated(sID("mode"), sID("blendMode"), mapBlendModeToTypeId(p.blendMode || defaults.blendMode));
+        putPercent(d, "opacity", resolveNumber(p.opacity, defaults.opacity));
+        d.putEnumerated(sID("type"), sID("gradientType"), mapGradientType(p.type || defaults.type));
+        d.putBoolean(sID("reverse"), resolveBool(p.reverse, defaults.reverse));
+        d.putBoolean(sID("dither"), resolveBool(p.dither, defaults.dither));
+        d.putBoolean(sID("align"), resolveBool(p.align, defaults.align));
+        putAngle(d, "angle", resolveNumber(p.angle, defaults.angle));
+        putPercent(d, "scale", resolveNumber(p.scale, defaults.scale));
+        d.putObject(sID("gradient"), cID("Grdn"), buildGradientStopsDescriptor(p));
+        return d;
+    }
+
+    function buildPatternOverlayDescriptor(params, defaults) {
+        var p = params || {};
+        if (!p.patternName && !p.patternId) {
+            throw new Error("Missing patternName/patternId for patternOverlay");
+        }
+        var d = new ActionDescriptor();
+        d.putBoolean(sID("enabled"), resolveBool(p.enabled, defaults.enabled));
+        d.putBoolean(sID("present"), true);
+        d.putBoolean(sID("showInDialog"), true);
+        d.putEnumerated(sID("mode"), sID("blendMode"), mapBlendModeToTypeId(p.blendMode || defaults.blendMode));
+        putPercent(d, "opacity", resolveNumber(p.opacity, defaults.opacity));
+        var patternDesc = new ActionDescriptor();
+        if (p.patternName) {
+            patternDesc.putString(cID("Nm  "), p.patternName);
+        }
+        if (p.patternId) {
+            patternDesc.putString(cID("Idnt"), p.patternId);
+        }
+        d.putObject(sID("pattern"), cID("Ptrn"), patternDesc);
+        putPercent(d, "scale", resolveNumber(p.scale, defaults.scale));
+        d.putBoolean(sID("align"), resolveBool(p.align, defaults.align));
+        return d;
+    }
+
+    function buildBevelEmbossDescriptor(params, defaults) {
+        var p = params || {};
+        var d = new ActionDescriptor();
+        d.putBoolean(sID("enabled"), resolveBool(p.enabled, defaults.enabled));
+        d.putBoolean(sID("present"), true);
+        d.putBoolean(sID("showInDialog"), true);
+        d.putEnumerated(sID("style"), sID("bevelStyle"), mapBevelStyle(p.style || defaults.style));
+        d.putEnumerated(sID("technique"), sID("bevelTechnique"), mapBevelTechnique(p.technique || defaults.technique));
+        d.putEnumerated(sID("direction"), sID("bevelDirection"), mapBevelDirection(p.direction || defaults.direction));
+        putPercent(d, "depth", resolveNumber(p.depth, defaults.depth));
+        putPixels(d, "size", resolveNumber(p.size, defaults.size));
+        putPixels(d, "soften", resolveNumber(p.soften, defaults.soften));
+        d.putBoolean(sID("useGlobalAngle"), resolveBool(p.useGlobalAngle, defaults.useGlobalAngle));
+        putAngle(d, "angle", resolveNumber(p.angle, defaults.angle));
+        putAngle(d, "altitude", resolveNumber(p.altitude, defaults.altitude));
+
+        var highlightMode = new ActionDescriptor();
+        highlightMode.putEnumerated(sID("mode"), sID("blendMode"), mapBlendModeToTypeId(p.highlightMode || defaults.highlightMode));
+        putPercent(highlightMode, "opacity", resolveNumber(p.highlightOpacity, defaults.highlightOpacity));
+        highlightMode.putObject(sID("color"), cID("RGBC"), rgbArrayToDescriptor(p.highlightColor, defaults.highlightColor));
+        d.putObject(sID("highlightMode"), sID("highlightMode"), highlightMode);
+
+        var shadowMode = new ActionDescriptor();
+        shadowMode.putEnumerated(sID("mode"), sID("blendMode"), mapBlendModeToTypeId(p.shadowMode || defaults.shadowMode));
+        putPercent(shadowMode, "opacity", resolveNumber(p.shadowOpacity, defaults.shadowOpacity));
+        shadowMode.putObject(sID("color"), cID("RGBC"), rgbArrayToDescriptor(p.shadowColor, defaults.shadowColor));
+        d.putObject(sID("shadowMode"), sID("shadowMode"), shadowMode);
+
+        return d;
+    }
+
+    function buildBlendingOptionsDescriptor(params, defaults) {
+        var p = params || {};
+        var d = new ActionDescriptor();
+        d.putEnumerated(sID("mode"), sID("blendMode"), mapBlendModeToTypeId(p.blendMode || defaults.blendMode));
+        putPercent(d, "opacity", resolveNumber(p.opacity, defaults.opacity));
+        if (typeof p.fillOpacity !== "undefined" || typeof defaults.fillOpacity !== "undefined") {
+            putPercent(d, "fillOpacity", resolveNumber(p.fillOpacity, defaults.fillOpacity));
+        }
+        return d;
+    }
+
+    function setLayerStyle(doc, params) {
+        var layer = resolveLayerFromParams(doc, params);
+        if (!layer) {
+            throw new Error("Layer not found");
+        }
+        doc.activeLayer = layer;
+
+        var fxDesc = new ActionDescriptor();
+        var hasFx = false;
+
+        var defaults = {
+            dropShadow: { enabled: true, opacity: 75, color: [0, 0, 0], size: 5, spread: 0, angle: 120, distance: 5, blendMode: "MULTIPLY", noise: 0, choke: 0, useGlobalAngle: true },
+            innerShadow: { enabled: true, opacity: 75, color: [0, 0, 0], size: 5, angle: 120, distance: 5, blendMode: "MULTIPLY", noise: 0, choke: 0, useGlobalAngle: true },
+            outerGlow: { enabled: true, opacity: 75, color: [255, 255, 255], size: 5, blendMode: "SCREEN", noise: 0, choke: 0, technique: "SOFTER", range: 50 },
+            innerGlow: { enabled: true, opacity: 75, color: [255, 255, 255], size: 5, blendMode: "SCREEN", noise: 0, choke: 0, technique: "SOFTER", source: "EDGE", range: 50 },
+            stroke: { enabled: true, opacity: 100, color: [0, 0, 0], size: 1, position: "OUTSIDE", blendMode: "NORMAL" },
+            colorOverlay: { enabled: true, opacity: 100, color: [0, 0, 0], blendMode: "NORMAL" },
+            gradientOverlay: { enabled: true, opacity: 100, blendMode: "NORMAL", angle: 90, scale: 100, type: "LINEAR", reverse: false, align: true, dither: true },
+            patternOverlay: { enabled: true, opacity: 100, blendMode: "NORMAL", scale: 100, align: true },
+            bevelEmboss: { enabled: true, style: "INNER_BEVEL", technique: "SMOOTH", direction: "UP", depth: 100, size: 5, soften: 0, angle: 120, altitude: 30, useGlobalAngle: true, highlightMode: "SCREEN", shadowMode: "MULTIPLY", highlightOpacity: 75, shadowOpacity: 75, highlightColor: [255, 255, 255], shadowColor: [0, 0, 0] },
+            blendingOptions: { opacity: 100, fillOpacity: 100, blendMode: "NORMAL" }
+        };
+
+        if (params && params.dropShadow) {
+            fxDesc.putObject(sID("dropShadow"), sID("dropShadow"), buildShadowDescriptor(params.dropShadow, defaults.dropShadow));
+            hasFx = true;
+        }
+        if (params && params.innerShadow) {
+            fxDesc.putObject(sID("innerShadow"), sID("innerShadow"), buildShadowDescriptor(params.innerShadow, defaults.innerShadow));
+            hasFx = true;
+        }
+        if (params && params.outerGlow) {
+            fxDesc.putObject(sID("outerGlow"), sID("outerGlow"), buildGlowDescriptor(params.outerGlow, defaults.outerGlow, false));
+            hasFx = true;
+        }
+        if (params && params.innerGlow) {
+            fxDesc.putObject(sID("innerGlow"), sID("innerGlow"), buildGlowDescriptor(params.innerGlow, defaults.innerGlow, true));
+            hasFx = true;
+        }
+        if (params && params.stroke) {
+            fxDesc.putObject(sID("frameFX"), sID("frameFX"), buildStrokeDescriptor(params.stroke, defaults.stroke));
+            hasFx = true;
+        }
+        if (params && params.colorOverlay) {
+            fxDesc.putObject(sID("solidFill"), sID("solidFill"), buildColorOverlayDescriptor(params.colorOverlay, defaults.colorOverlay));
+            hasFx = true;
+        }
+        if (params && params.gradientOverlay) {
+            fxDesc.putObject(sID("gradientFill"), sID("gradientFill"), buildGradientOverlayDescriptor(params.gradientOverlay, defaults.gradientOverlay));
+            hasFx = true;
+        }
+        if (params && params.patternOverlay) {
+            fxDesc.putObject(sID("patternFill"), sID("patternFill"), buildPatternOverlayDescriptor(params.patternOverlay, defaults.patternOverlay));
+            hasFx = true;
+        }
+        if (params && params.bevelEmboss) {
+            fxDesc.putObject(sID("bevelEmboss"), sID("bevelEmboss"), buildBevelEmbossDescriptor(params.bevelEmboss, defaults.bevelEmboss));
+            hasFx = true;
+        }
+        if (params && params.blendingOptions) {
+            fxDesc.putObject(sID("blendOptions"), sID("blendOptions"), buildBlendingOptionsDescriptor(params.blendingOptions, defaults.blendingOptions));
+            hasFx = true;
+        }
+        if (params && typeof params.scale !== "undefined") {
+            putPercent(fxDesc, "scale", params.scale);
+        }
+
+        if (!hasFx) {
+            throw new Error("No layer style parameters provided");
+        }
+
+        var desc = new ActionDescriptor();
+        var ref = new ActionReference();
+        ref.putProperty(cID("Prpr"), sID("layerEffects"));
+        ref.putEnumerated(cID("Lyr "), cID("Ordn"), cID("Trgt"));
+        desc.putReference(cID("null"), ref);
+        desc.putObject(cID("T   "), sID("layerEffects"), fxDesc);
+        executeAction(cID("setd"), desc, DialogModes.NO);
+
+        return { id: doc.activeLayer.id, name: doc.activeLayer.name, applied: true };
     }
 
     function setActiveLayer(doc, params) {
@@ -784,26 +1170,12 @@
         return addAdjustmentLayer(doc, LayerKind.BLACKANDWHITE, params);
     }
 
-    function buildGradientDescriptor(params) {
+    function buildGradientStopsDescriptor(params) {
         var colorStops = [];
         if (params && params.colors && params.colors.length >= 2) {
             colorStops = params.colors;
         } else {
             colorStops = [[0, 0, 0], [255, 255, 255]];
-        }
-
-        var angle = params && typeof params.angle !== "undefined" ? params.angle : 90;
-        var scale = params && typeof params.scale !== "undefined" ? params.scale : 100;
-        var typeKey = params && params.type ? normalizeEnumKey(params.type) : "LINEAR";
-        var typeId = cID("Lnr ");
-        if (typeKey === "RADIAL") {
-            typeId = cID("Rdl ");
-        } else if (typeKey === "ANGLE") {
-            typeId = cID("Angl");
-        } else if (typeKey === "REFLECTED") {
-            typeId = cID("Rflc");
-        } else if (typeKey === "DIAMOND") {
-            typeId = cID("Dmnd");
         }
 
         var gradientDesc = new ActionDescriptor();
@@ -817,11 +1189,7 @@
             var loc = (i === 0) ? 0 : (i === colorStops.length - 1 ? 4096 : Math.round(4096 * (i / (colorStops.length - 1))));
             stop.putInteger(cID("Lctn"), loc);
             stop.putInteger(cID("Mdpn"), 50);
-            var c = new ActionDescriptor();
-            c.putDouble(cID("Rd  "), colorStops[i][0]);
-            c.putDouble(cID("Grn "), colorStops[i][1]);
-            c.putDouble(cID("Bl  "), colorStops[i][2]);
-            stop.putObject(cID("Clr "), cID("RGBC"), c);
+            stop.putObject(cID("Clr "), cID("RGBC"), rgbArrayToDescriptor(colorStops[i], [0, 0, 0]));
             colorsList.putObject(cID("Clrt"), stop);
         }
         gradientDesc.putList(cID("Clrs"), colorsList);
@@ -839,13 +1207,31 @@
         transList.putObject(cID("TrnS"), t2);
         gradientDesc.putList(cID("Trns"), transList);
 
+        return gradientDesc;
+    }
+
+    function buildGradientDescriptor(params) {
+        var angle = params && typeof params.angle !== "undefined" ? params.angle : 90;
+        var scale = params && typeof params.scale !== "undefined" ? params.scale : 100;
+        var typeKey = params && params.type ? normalizeEnumKey(params.type) : "LINEAR";
+        var typeId = cID("Lnr ");
+        if (typeKey === "RADIAL") {
+            typeId = cID("Rdl ");
+        } else if (typeKey === "ANGLE") {
+            typeId = cID("Angl");
+        } else if (typeKey === "REFLECTED") {
+            typeId = cID("Rflc");
+        } else if (typeKey === "DIAMOND") {
+            typeId = cID("Dmnd");
+        }
+
         var gradientLayer = new ActionDescriptor();
         gradientLayer.putEnumerated(cID("Type"), cID("GrdT"), typeId);
         gradientLayer.putBoolean(cID("Dthr"), true);
         gradientLayer.putBoolean(cID("Rvrs"), false);
         gradientLayer.putUnitDouble(cID("Angl"), cID("#Ang"), angle);
         gradientLayer.putUnitDouble(cID("Scl "), cID("#Prc"), scale);
-        gradientLayer.putObject(cID("Grad"), cID("Grdn"), gradientDesc);
+        gradientLayer.putObject(cID("Grad"), cID("Grdn"), buildGradientStopsDescriptor(params));
         return gradientLayer;
     }
 
@@ -2088,6 +2474,8 @@
             response.data = deletePathItem(app.activeDocument, request.params);
         } else if (command === "apply_layer_style") {
             response.data = applyLayerStyleByName(app.activeDocument, request.params);
+        } else if (command === "set_layer_style") {
+            response.data = setLayerStyle(app.activeDocument, request.params);
         } else if (command === "set_active_layer") {
             response.data = setActiveLayer(app.activeDocument, request.params);
         } else if (command === "get_layer_bounds") {

@@ -156,6 +156,7 @@ Photoshop 技能包位于 `skills/photoshop-jsx-scripting`，包含：
 - `set_active_layer_visibility`（切换当前图层可见性）
 - `set_active_layer_opacity`（设置当前图层不透明度）
 - `set_active_layer_blend_mode`（设置当前图层混合模式）
+- `set_layer_style`（设置图层样式：阴影、发光、描边、叠加等）
 
 **选择与选区**
 - `select_all`（全选）

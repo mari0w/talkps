@@ -302,6 +302,53 @@ Use this table to design requests and responses for the JSX bridge.
     - `styleName` (string, required)
   - Response: `{ applied, id }`
 
+- `set_layer_style`
+  - Params:
+    - `layerId` (number, optional)
+    - `layerName` (string, optional)
+    - `scale` (number, optional, percent; global layer FX scale)
+    - `dropShadow` (object, optional)
+    - `innerShadow` (object, optional)
+    - `outerGlow` (object, optional)
+    - `innerGlow` (object, optional)
+    - `stroke` (object, optional)
+    - `colorOverlay` (object, optional)
+    - `gradientOverlay` (object, optional)
+    - `patternOverlay` (object, optional)
+    - `bevelEmboss` (object, optional)
+    - `blendingOptions` (object, optional)
+  - Common effect params (per sub-object, optional unless noted):
+    - `enabled` (boolean, default true)
+    - `opacity` (number, percent)
+    - `blendMode` (string, e.g. `MULTIPLY`, `SCREEN`, `NORMAL`)
+    - `color` (array `[r,g,b]`)
+    - `size` (number, px)
+    - `angle` (number, degrees)
+    - `distance` (number, px)
+    - `spread` (number, percent)
+    - `choke` (number, percent)
+    - `noise` (number, percent)
+  - Effect-specific fields:
+    - `dropShadow`: `useGlobalAngle` (boolean), `spread` (percent), `distance` (px)
+    - `innerShadow`: `useGlobalAngle` (boolean), `choke` (percent), `distance` (px)
+    - `outerGlow`: `technique` (`SOFTER`/`PRECISE`), `range` (percent)
+    - `innerGlow`: `technique` (`SOFTER`/`PRECISE`), `source` (`EDGE`/`CENTER`), `range` (percent)
+    - `stroke`: `position` (`INSIDE`/`CENTER`/`OUTSIDE`)
+    - `colorOverlay`: no extra fields
+    - `gradientOverlay`: `colors` (array of `[r,g,b]`), `type` (`LINEAR`/`RADIAL`/`ANGLE`/`REFLECTED`/`DIAMOND`), `angle`, `scale`, `reverse`, `align`, `dither`
+    - `patternOverlay`: `patternName` or `patternId` (required), `scale`, `align`
+    - `bevelEmboss`: `style`, `technique`, `direction`, `depth`, `soften`, `angle`, `altitude`, `highlightMode`, `shadowMode`, `highlightOpacity`, `shadowOpacity`, `highlightColor`, `shadowColor`, `useGlobalAngle`
+    - `blendingOptions`: `opacity`, `fillOpacity`, `blendMode`
+  - Response: `{ id, name, applied }`
+  - Example:
+    ```json
+    {"command":"set_layer_style","params":{"dropShadow":{"opacity":65,"distance":12,"size":16,"angle":120,"color":[0,0,0]},"stroke":{"size":4,"position":"OUTSIDE","color":[255,255,255]},"colorOverlay":{"opacity":40,"color":[30,120,255]},"blendingOptions":{"opacity":90,"fillOpacity":100,"blendMode":"NORMAL"}}}
+    ```
+  - Example (gradient + glow):
+    ```json
+    {"command":"set_layer_style","params":{"outerGlow":{"opacity":70,"size":20,"color":[255,200,120]},"gradientOverlay":{"colors":[[20,20,20],[240,240,240]],"type":"LINEAR","angle":90,"scale":100}}}
+    ```
+
 ## Groups
 - `create_layer_group`
   - Params:
