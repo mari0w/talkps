@@ -4,7 +4,7 @@
 
 A lightweight bridge for driving Adobe Photoshop from Codex workflows. The repo includes:
 
-- **ExtendScript/JSX bridge** (`ps_agent.jsx` + `ps_call.sh`) for JSON-in/JSON-out commands.
+- **ExtendScript/JSX bridge** (`skills/photoshop-jsx-scripting/scripts/ps_agent.jsx` + `skills/photoshop-jsx-scripting/scripts/ps_call.sh`) for JSON-in/JSON-out commands.
 - **UXP panel sample** (`main.js`, `manifest.json`) showing modern Photoshop plugin usage.
 - **Skill package** (`skills/photoshop-jsx-scripting`) with references and workflow guidance.
 
@@ -14,9 +14,9 @@ A lightweight bridge for driving Adobe Photoshop from Codex workflows. The repo 
 ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 ```
 
-- `ps_call.sh` writes a request JSON, runs `ps_agent.jsx` inside Photoshop, and prints the response.
-- `ps_agent.jsx` reads `ps_request.json` from its own directory and writes `ps_response.json` back.
-- `run_ps.sh` uses AppleScript (`osascript`) to ask Photoshop to execute the JSX.
+- `skills/photoshop-jsx-scripting/scripts/ps_call.sh` writes a request JSON, runs `skills/photoshop-jsx-scripting/scripts/ps_agent.jsx` inside Photoshop, and prints the response.
+- `skills/photoshop-jsx-scripting/scripts/ps_agent.jsx` reads `skills/photoshop-jsx-scripting/scripts/ps_request.json` from its own directory and writes `skills/photoshop-jsx-scripting/scripts/ps_response.json` back.
+- `skills/photoshop-jsx-scripting/scripts/run_ps.sh` uses AppleScript (`osascript`) to ask Photoshop to execute the JSX.
 
 ## Quick start (JSX bridge)
 
@@ -24,7 +24,7 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 2. In this repo, run:
 
 ```bash
-./ps_call.sh '{"command":"ping"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"ping"}'
 ```
 
 This `ping` command checks that Photoshop can execute the JSX bridge and that the JSON request/response loop is working.
@@ -32,29 +32,29 @@ This `ping` command checks that Photoshop can execute the JSX bridge and that th
 3. If you want to inspect the current document:
 
 ```bash
-./ps_call.sh '{"command":"get_document_info"}'
-./ps_call.sh '{"command":"list_layers"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"get_document_info"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"list_layers"}'
 ```
 
 4. Examples that use parameters (JSON input):
 
 ```bash
-./ps_call.sh '{"command":"add_text_layer","params":{"text":"Hello","font":"ArialMT","size":48,"color":[255,0,0],"position":[100,200]}}'
-./ps_call.sh '{"command":"create_document","params":{"width":1200,"height":800,"resolution":72,"name":"Hero","mode":"RGB","fill":"WHITE"}}'
-./ps_call.sh '{"command":"add_empty_layer","params":{"name":"Base"}}'
-./ps_call.sh '{"command":"merge_active_down"}'
-./ps_call.sh '{"command":"merge_visible_layers"}'
-./ps_call.sh '{"command":"list_fonts"}'
-./ps_call.sh '{"command":"duplicate_active_layer","params":{"name":"Copy"}}'
-./ps_call.sh '{"command":"rename_active_layer","params":{"name":"Hero"}}'
-./ps_call.sh '{"command":"set_active_layer_visibility","params":{"visible":false}}'
-./ps_call.sh '{"command":"set_active_layer_opacity","params":{"opacity":55}}'
-./ps_call.sh '{"command":"set_active_layer_blend_mode","params":{"mode":"MULTIPLY"}}'
-./ps_call.sh '{"command":"resize_image","params":{"width":800,"height":600,"resample":"BICUBIC"}}'
-./ps_call.sh '{"command":"resize_canvas","params":{"width":1000,"height":800,"anchor":"MIDDLECENTER"}}'
-./ps_call.sh '{"command":"rotate_canvas","params":{"angle":90}}'
-./ps_call.sh '{"command":"save_active_document_as","params":{"path":"/tmp/hero.psd","format":"psd"}}'
-./ps_call.sh '{"command":"delete_active_layer"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"add_text_layer","params":{"text":"Hello","font":"ArialMT","size":48,"color":[255,0,0],"position":[100,200]}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"create_document","params":{"width":1200,"height":800,"resolution":72,"name":"Hero","mode":"RGB","fill":"WHITE"}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"add_empty_layer","params":{"name":"Base"}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"merge_active_down"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"merge_visible_layers"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"list_fonts"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"duplicate_active_layer","params":{"name":"Copy"}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"rename_active_layer","params":{"name":"Hero"}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"set_active_layer_visibility","params":{"visible":false}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"set_active_layer_opacity","params":{"opacity":55}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"set_active_layer_blend_mode","params":{"mode":"MULTIPLY"}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"resize_image","params":{"width":800,"height":600,"resample":"BICUBIC"}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"resize_canvas","params":{"width":1000,"height":800,"anchor":"MIDDLECENTER"}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"rotate_canvas","params":{"angle":90}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"save_active_document_as","params":{"path":"/tmp/hero.psd","format":"psd"}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"delete_active_layer"}'
 ```
 
 Example command meanings:
@@ -79,7 +79,7 @@ Example command meanings:
 
 ### Config overrides
 
-By default the scripts read/write `ps_request.json` and `ps_response.json` next to the scripts. If you need custom paths (for example, when the files live in a synced folder), set:
+By default the scripts read/write `skills/photoshop-jsx-scripting/scripts/ps_request.json` and `skills/photoshop-jsx-scripting/scripts/ps_response.json` next to the scripts. If you need custom paths (for example, when the files live in a synced folder), set:
 
 - `PS_REQUEST_FILE`
 - `PS_RESPONSE_FILE`
@@ -91,7 +91,7 @@ Example:
 ```bash
 PS_REQUEST_FILE=/path/to/ps_request.json \
 PS_RESPONSE_FILE=/path/to/ps_response.json \
-./ps_call.sh '{"command":"list_layers"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"list_layers"}'
 ```
 
 ## Skill package
@@ -99,12 +99,12 @@ PS_RESPONSE_FILE=/path/to/ps_response.json \
 The Photoshop skill lives in `skills/photoshop-jsx-scripting`. It documents:
 
 - Where to find official scripting docs.
-- How to add new commands to `ps_agent.jsx`.
+- How to add new commands to `skills/photoshop-jsx-scripting/scripts/ps_agent.jsx`.
 - How to fall back to Action Manager code when DOM APIs are missing.
 
 ## Supported operations (current)
 
-These are the Photoshop operations currently implemented in `ps_agent.jsx`:
+These are the Photoshop operations currently implemented in `skills/photoshop-jsx-scripting/scripts/ps_agent.jsx`:
 
 **Health & inspection**
 - `ping` (verify the JSX bridge and JSON request/response loop)
@@ -152,5 +152,5 @@ These are the primary sources used to map commands to Photoshop scripting APIs:
 
 ## Notes
 
-- `run_ps.sh` uses AppleScript and is macOS-only.
-- `ps_agent.jsx` requires an open document for most commands (except `ping`).
+- `skills/photoshop-jsx-scripting/scripts/run_ps.sh` uses AppleScript and is macOS-only.
+- `skills/photoshop-jsx-scripting/scripts/ps_agent.jsx` requires an open document for most commands (except `ping`).

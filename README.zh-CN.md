@@ -4,7 +4,7 @@
 
 这是一个用于在 Codex 工作流中驱动 Adobe Photoshop 的轻量桥接仓库，包含以下内容：
 
-- **ExtendScript/JSX 桥接**（`ps_agent.jsx` + `ps_call.sh`），以 JSON 方式进行命令输入/输出。
+- **ExtendScript/JSX 桥接**（`skills/photoshop-jsx-scripting/scripts/ps_agent.jsx` + `skills/photoshop-jsx-scripting/scripts/ps_call.sh`），以 JSON 方式进行命令输入/输出。
 - **UXP 面板示例**（`main.js`, `manifest.json`），展示现代 Photoshop 插件调用方式。
 - **技能包**（`skills/photoshop-jsx-scripting`），包含官方参考与扩展流程。
 
@@ -14,9 +14,9 @@
 ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 ```
 
-- `ps_call.sh` 写入请求 JSON，调用 Photoshop 执行 `ps_agent.jsx`，并输出响应。
-- `ps_agent.jsx` 从脚本目录读取 `ps_request.json`，写回 `ps_response.json`。
-- `run_ps.sh` 使用 AppleScript (`osascript`) 让 Photoshop 执行 JSX 脚本。
+- `skills/photoshop-jsx-scripting/scripts/ps_call.sh` 写入请求 JSON，调用 Photoshop 执行 `skills/photoshop-jsx-scripting/scripts/ps_agent.jsx`，并输出响应。
+- `skills/photoshop-jsx-scripting/scripts/ps_agent.jsx` 从脚本目录读取 `skills/photoshop-jsx-scripting/scripts/ps_request.json`，写回 `skills/photoshop-jsx-scripting/scripts/ps_response.json`。
+- `skills/photoshop-jsx-scripting/scripts/run_ps.sh` 使用 AppleScript (`osascript`) 让 Photoshop 执行 JSX 脚本。
 
 ## 快速开始（JSX 桥接）
 
@@ -24,7 +24,7 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 2. 在本仓库下运行：
 
 ```bash
-./ps_call.sh '{"command":"ping"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"ping"}'
 ```
 
 该 `ping` 命令用于确认 Photoshop 可以执行 JSX 桥接脚本，并验证 JSON 请求/响应链路是否正常。
@@ -32,29 +32,29 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 3. 如果要查看当前文档信息：
 
 ```bash
-./ps_call.sh '{"command":"get_document_info"}'
-./ps_call.sh '{"command":"list_layers"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"get_document_info"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"list_layers"}'
 ```
 
 4. 带参数的示例（JSON 输入）：
 
 ```bash
-./ps_call.sh '{"command":"add_text_layer","params":{"text":"Hello","font":"ArialMT","size":48,"color":[255,0,0],"position":[100,200]}}'
-./ps_call.sh '{"command":"create_document","params":{"width":1200,"height":800,"resolution":72,"name":"Hero","mode":"RGB","fill":"WHITE"}}'
-./ps_call.sh '{"command":"add_empty_layer","params":{"name":"Base"}}'
-./ps_call.sh '{"command":"merge_active_down"}'
-./ps_call.sh '{"command":"merge_visible_layers"}'
-./ps_call.sh '{"command":"list_fonts"}'
-./ps_call.sh '{"command":"duplicate_active_layer","params":{"name":"Copy"}}'
-./ps_call.sh '{"command":"rename_active_layer","params":{"name":"Hero"}}'
-./ps_call.sh '{"command":"set_active_layer_visibility","params":{"visible":false}}'
-./ps_call.sh '{"command":"set_active_layer_opacity","params":{"opacity":55}}'
-./ps_call.sh '{"command":"set_active_layer_blend_mode","params":{"mode":"MULTIPLY"}}'
-./ps_call.sh '{"command":"resize_image","params":{"width":800,"height":600,"resample":"BICUBIC"}}'
-./ps_call.sh '{"command":"resize_canvas","params":{"width":1000,"height":800,"anchor":"MIDDLECENTER"}}'
-./ps_call.sh '{"command":"rotate_canvas","params":{"angle":90}}'
-./ps_call.sh '{"command":"save_active_document_as","params":{"path":"/tmp/hero.psd","format":"psd"}}'
-./ps_call.sh '{"command":"delete_active_layer"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"add_text_layer","params":{"text":"Hello","font":"ArialMT","size":48,"color":[255,0,0],"position":[100,200]}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"create_document","params":{"width":1200,"height":800,"resolution":72,"name":"Hero","mode":"RGB","fill":"WHITE"}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"add_empty_layer","params":{"name":"Base"}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"merge_active_down"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"merge_visible_layers"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"list_fonts"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"duplicate_active_layer","params":{"name":"Copy"}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"rename_active_layer","params":{"name":"Hero"}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"set_active_layer_visibility","params":{"visible":false}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"set_active_layer_opacity","params":{"opacity":55}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"set_active_layer_blend_mode","params":{"mode":"MULTIPLY"}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"resize_image","params":{"width":800,"height":600,"resample":"BICUBIC"}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"resize_canvas","params":{"width":1000,"height":800,"anchor":"MIDDLECENTER"}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"rotate_canvas","params":{"angle":90}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"save_active_document_as","params":{"path":"/tmp/hero.psd","format":"psd"}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"delete_active_layer"}'
 ```
 
 示例命令含义：
@@ -79,7 +79,7 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 
 ### 配置覆盖
 
-默认情况下脚本会在当前目录读写 `ps_request.json` / `ps_response.json`。如需自定义路径，可设置：
+默认情况下脚本会在当前目录读写 `skills/photoshop-jsx-scripting/scripts/ps_request.json` / `skills/photoshop-jsx-scripting/scripts/ps_response.json`。如需自定义路径，可设置：
 
 - `PS_REQUEST_FILE`
 - `PS_RESPONSE_FILE`
@@ -91,7 +91,7 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 ```bash
 PS_REQUEST_FILE=/path/to/ps_request.json \
 PS_RESPONSE_FILE=/path/to/ps_response.json \
-./ps_call.sh '{"command":"list_layers"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"list_layers"}'
 ```
 
 ## 技能包
@@ -99,12 +99,12 @@ PS_RESPONSE_FILE=/path/to/ps_response.json \
 Photoshop 技能包位于 `skills/photoshop-jsx-scripting`，包含：
 
 - 官方脚本文档入口。
-- 如何新增命令到 `ps_agent.jsx`。
+- 如何新增命令到 `skills/photoshop-jsx-scripting/scripts/ps_agent.jsx`。
 - 当 DOM API 不足时如何使用 Action Manager。
 
 ## 当前已支持的操作
 
-以下是 `ps_agent.jsx` 目前已经实现的 Photoshop 操作：
+以下是 `skills/photoshop-jsx-scripting/scripts/ps_agent.jsx` 目前已经实现的 Photoshop 操作：
 
 **健康检查与信息获取**
 - `ping`（验证 JSX 桥接与 JSON 请求/响应链路）
@@ -208,5 +208,5 @@ Photoshop 技能包位于 `skills/photoshop-jsx-scripting`，包含：
 
 ## 说明
 
-- `run_ps.sh` 依赖 AppleScript，仅支持 macOS。
-- `ps_agent.jsx` 除 `ping` 之外的命令都需要打开文档。
+- `skills/photoshop-jsx-scripting/scripts/run_ps.sh` 依赖 AppleScript，仅支持 macOS。
+- `skills/photoshop-jsx-scripting/scripts/ps_agent.jsx` 除 `ping` 之外的命令都需要打开文档。
