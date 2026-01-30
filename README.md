@@ -40,6 +40,8 @@ This `ping` command checks that Photoshop can execute the JSX bridge and that th
 
 ```bash
 ./ps_call.sh '{"command":"add_text_layer","params":{"text":"Hello","font":"ArialMT","size":48,"color":[255,0,0],"position":[100,200]}}'
+./ps_call.sh '{"command":"create_document","params":{"width":1200,"height":800,"resolution":72,"name":"Hero","mode":"RGB","fill":"WHITE"}}'
+./ps_call.sh '{"command":"add_empty_layer","params":{"name":"Base"}}'
 ./ps_call.sh '{"command":"merge_active_down"}'
 ./ps_call.sh '{"command":"merge_visible_layers"}'
 ./ps_call.sh '{"command":"list_fonts"}'
@@ -47,13 +49,20 @@ This `ping` command checks that Photoshop can execute the JSX bridge and that th
 ./ps_call.sh '{"command":"rename_active_layer","params":{"name":"Hero"}}'
 ./ps_call.sh '{"command":"set_active_layer_visibility","params":{"visible":false}}'
 ./ps_call.sh '{"command":"set_active_layer_opacity","params":{"opacity":55}}'
+./ps_call.sh '{"command":"set_active_layer_blend_mode","params":{"mode":"MULTIPLY"}}'
+./ps_call.sh '{"command":"resize_image","params":{"width":800,"height":600,"resample":"BICUBIC"}}'
+./ps_call.sh '{"command":"resize_canvas","params":{"width":1000,"height":800,"anchor":"MIDDLECENTER"}}'
+./ps_call.sh '{"command":"rotate_canvas","params":{"angle":90}}'
+./ps_call.sh '{"command":"save_active_document_as","params":{"path":"/tmp/hero.psd","format":"psd"}}'
 ./ps_call.sh '{"command":"delete_active_layer"}'
 ```
 
 Example command meanings:
+- `create_document`: Create a new document with size, mode, and fill settings.
 - `get_document_info`: Return the active document's size, mode, and other metadata.
 - `list_layers`: List layer names, IDs, and visibility in the active document.
 - `add_text_layer`: Add a new text layer with the provided content and styling.
+- `add_empty_layer`: Add a blank raster layer (optionally named).
 - `merge_active_down`: Merge the active layer with the layer below it.
 - `merge_visible_layers`: Merge all currently visible layers into one.
 - `list_fonts`: Return the list of available fonts.
@@ -61,6 +70,11 @@ Example command meanings:
 - `rename_active_layer`: Rename the active layer.
 - `set_active_layer_visibility`: Show or hide the active layer.
 - `set_active_layer_opacity`: Change the active layer opacity (0-100).
+- `set_active_layer_blend_mode`: Set the active layer blend mode.
+- `resize_image`: Resize pixel dimensions and/or resolution.
+- `resize_canvas`: Resize the canvas with a specific anchor position.
+- `rotate_canvas`: Rotate the canvas by degrees.
+- `save_active_document_as`: Save the active document to a specific file format.
 - `delete_active_layer`: Delete the active layer.
 
 ### Config overrides
@@ -98,10 +112,23 @@ These are the Photoshop operations currently implemented in `ps_agent.jsx`:
 - `list_layers` (layer list with IDs and visibility)
 - `list_fonts` (list available fonts)
 
+**Document management**
+- `create_document` (create a new document)
+- `open_document` (open an existing document)
+- `save_active_document` (save current document)
+- `save_active_document_as` (save to a specific format/path)
+- `close_active_document` (close with save options)
+- `duplicate_active_document` (duplicate the active document)
+- `flatten_active_document` (flatten layers into background)
+- `resize_image` (resize pixel dimensions/resolution)
+- `resize_canvas` (resize the canvas)
+- `rotate_canvas` (rotate the canvas)
+
 **Text**
 - `add_text_layer` (set text content, font, size, color, position)
 
 **Layer management**
+- `add_empty_layer` (add a blank raster layer)
 - `merge_active_down` (merge the active layer with the layer beneath it)
 - `merge_visible_layers` (merge all visible layers)
 - `duplicate_active_layer` (duplicate the active layer)
@@ -109,6 +136,7 @@ These are the Photoshop operations currently implemented in `ps_agent.jsx`:
 - `rename_active_layer` (rename the active layer)
 - `set_active_layer_visibility` (toggle visibility for the active layer)
 - `set_active_layer_opacity` (set the active layer opacity)
+- `set_active_layer_blend_mode` (set the active layer blend mode)
 
 ## Official documentation sources
 
