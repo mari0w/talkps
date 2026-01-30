@@ -1,5 +1,7 @@
 # talkps
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 A lightweight bridge for driving Adobe Photoshop from Codex workflows. The repo includes:
 
 - **ExtendScript/JSX bridge** (`ps_agent.jsx` + `ps_call.sh`) for JSON-in/JSON-out commands.
@@ -25,6 +27,8 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 ./ps_call.sh '{"command":"ping"}'
 ```
 
+This `ping` command checks that Photoshop can execute the JSX bridge and that the JSON request/response loop is working.
+
 3. If you want to inspect the current document:
 
 ```bash
@@ -45,6 +49,19 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 ./ps_call.sh '{"command":"set_active_layer_opacity","params":{"opacity":55}}'
 ./ps_call.sh '{"command":"delete_active_layer"}'
 ```
+
+Example command meanings:
+- `get_document_info`: Return the active document's size, mode, and other metadata.
+- `list_layers`: List layer names, IDs, and visibility in the active document.
+- `add_text_layer`: Add a new text layer with the provided content and styling.
+- `merge_active_down`: Merge the active layer with the layer below it.
+- `merge_visible_layers`: Merge all currently visible layers into one.
+- `list_fonts`: Return the list of available fonts.
+- `duplicate_active_layer`: Duplicate the active layer (optionally with a new name).
+- `rename_active_layer`: Rename the active layer.
+- `set_active_layer_visibility`: Show or hide the active layer.
+- `set_active_layer_opacity`: Change the active layer opacity (0-100).
+- `delete_active_layer`: Delete the active layer.
 
 ### Config overrides
 
@@ -76,22 +93,22 @@ The Photoshop skill lives in `skills/photoshop-jsx-scripting`. It documents:
 These are the Photoshop operations currently implemented in `ps_agent.jsx`:
 
 **Health & inspection**
-- `ping`
-- `get_document_info`
-- `list_layers`
-- `list_fonts`
+- `ping` (verify the JSX bridge and JSON request/response loop)
+- `get_document_info` (document size, mode, and metadata)
+- `list_layers` (layer list with IDs and visibility)
+- `list_fonts` (list available fonts)
 
 **Text**
 - `add_text_layer` (set text content, font, size, color, position)
 
 **Layer management**
-- `merge_active_down`
-- `merge_visible_layers`
-- `duplicate_active_layer`
-- `delete_active_layer`
-- `rename_active_layer`
-- `set_active_layer_visibility`
-- `set_active_layer_opacity`
+- `merge_active_down` (merge the active layer with the layer beneath it)
+- `merge_visible_layers` (merge all visible layers)
+- `duplicate_active_layer` (duplicate the active layer)
+- `delete_active_layer` (delete the active layer)
+- `rename_active_layer` (rename the active layer)
+- `set_active_layer_visibility` (toggle visibility for the active layer)
+- `set_active_layer_opacity` (set the active layer opacity)
 
 ## Official documentation sources
 

@@ -1,5 +1,7 @@
 # talkps
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 这是一个用于在 Codex 工作流中驱动 Adobe Photoshop 的轻量桥接仓库，包含以下内容：
 
 - **ExtendScript/JSX 桥接**（`ps_agent.jsx` + `ps_call.sh`），以 JSON 方式进行命令输入/输出。
@@ -25,6 +27,8 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 ./ps_call.sh '{"command":"ping"}'
 ```
 
+该 `ping` 命令用于确认 Photoshop 可以执行 JSX 桥接脚本，并验证 JSON 请求/响应链路是否正常。
+
 3. 如果要查看当前文档信息：
 
 ```bash
@@ -45,6 +49,19 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 ./ps_call.sh '{"command":"set_active_layer_opacity","params":{"opacity":55}}'
 ./ps_call.sh '{"command":"delete_active_layer"}'
 ```
+
+示例命令含义：
+- `get_document_info`：返回当前文档的尺寸、颜色模式等信息。
+- `list_layers`：列出当前文档中的图层名称、ID、可见性。
+- `add_text_layer`：按指定内容与样式新增文字图层。
+- `merge_active_down`：将当前图层与下方图层合并。
+- `merge_visible_layers`：合并所有可见图层。
+- `list_fonts`：返回可用字体列表。
+- `duplicate_active_layer`：复制当前图层（可指定新名称）。
+- `rename_active_layer`：重命名当前图层。
+- `set_active_layer_visibility`：显示或隐藏当前图层。
+- `set_active_layer_opacity`：设置当前图层不透明度（0-100）。
+- `delete_active_layer`：删除当前图层。
 
 ### 配置覆盖
 
@@ -76,22 +93,22 @@ Photoshop 技能包位于 `skills/photoshop-jsx-scripting`，包含：
 以下是 `ps_agent.jsx` 目前已经实现的 Photoshop 操作：
 
 **健康检查与信息获取**
-- `ping`
-- `get_document_info`
-- `list_layers`
-- `list_fonts`
+- `ping`（验证 JSX 桥接与 JSON 请求/响应链路）
+- `get_document_info`（文档尺寸、模式、元数据）
+- `list_layers`（图层列表、ID 与可见性）
+- `list_fonts`（可用字体列表）
 
 **文字相关**
 - `add_text_layer`（设置文字内容、字体、字号、颜色、位置）
 
 **图层管理**
-- `merge_active_down`
-- `merge_visible_layers`
-- `duplicate_active_layer`
-- `delete_active_layer`
-- `rename_active_layer`
-- `set_active_layer_visibility`
-- `set_active_layer_opacity`
+- `merge_active_down`（合并当前图层与下方图层）
+- `merge_visible_layers`（合并所有可见图层）
+- `duplicate_active_layer`（复制当前图层）
+- `delete_active_layer`（删除当前图层）
+- `rename_active_layer`（重命名当前图层）
+- `set_active_layer_visibility`（切换当前图层可见性）
+- `set_active_layer_opacity`（设置当前图层不透明度）
 
 ## 官方文档来源
 
