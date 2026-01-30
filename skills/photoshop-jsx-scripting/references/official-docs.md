@@ -33,3 +33,5 @@
 ## How to use these docs
 - Start with the JavaScript Reference to find the exact class/property/method.
 - Use the Scripting Guide for Action Manager patterns and ScriptListener usage.
+- When searching PDFs, look for the class name (e.g., `ArtLayer`, `Document`, `LayerSet`).
+- If a feature is missing from the DOM, use ScriptListener to capture the action and translate it to ExtendScript.
