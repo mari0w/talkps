@@ -1490,6 +1490,160 @@
         return { id: layer.id, name: layer.name, kind: "text" };
     }
 
+    function getTextLayerState(layer) {
+        var t = layer.textItem;
+        var state = {
+            kind: String(t.kind),
+            font: t.font,
+            size: Number(t.size),
+            autoLeading: t.autoLeading ? true : false,
+            leading: null,
+            tracking: Number(t.tracking)
+        };
+        try {
+            state.leading = Number(t.leading);
+        } catch (e) {
+            state.leading = null;
+        }
+        return state;
+    }
+
+    function fitTextToBox(doc, params) {
+        if (!params || (!params.layerId && !params.layerName)) {
+            throw new Error("Missing params.layerId or params.layerName");
+        }
+        if (!params.box || typeof params.box.x === "undefined" || typeof params.box.y === "undefined" ||
+            typeof params.box.width === "undefined" || typeof params.box.height === "undefined") {
+            throw new Error("Missing params.box (x/y/width/height)");
+        }
+
+        var layer = resolveLayerFromParams(doc, params);
+        if (!layer) {
+            throw new Error("Layer not found");
+        }
+        if (String(layer.kind) !== String(LayerKind.TEXT)) {
+            throw new Error("Layer is not a text layer");
+        }
+
+        var box = params.box;
+        var padding = typeof params.padding !== "undefined" ? params.padding : 0;
+        var left = box.x + padding;
+        var top = box.y + padding;
+        var right = box.x + box.width - padding;
+        var bottom = box.y + box.height - padding;
+        if (right <= left || bottom <= top) {
+            throw new Error("Invalid box after padding");
+        }
+
+        doc.activeLayer = layer;
+        var t = layer.textItem;
+
+        // Force paragraph text so the box constrains wrapping and bounds are predictable.
+        t.kind = TextType.PARAGRAPHTEXT;
+        t.position = [left, top];
+        t.width = toUnitValue(right - left, "px");
+        t.height = toUnitValue(bottom - top, "px");
+
+        // Optional initial typography knobs.
+        if (typeof params.size !== "undefined") {
+            t.size = params.size;
+        }
+        if (typeof params.tracking !== "undefined") {
+            t.tracking = params.tracking;
+        }
+        if (typeof params.leading !== "undefined") {
+            t.autoLeading = false;
+            t.leading = params.leading;
+        } else if (typeof params.autoLeading !== "undefined") {
+            t.autoLeading = params.autoLeading ? true : false;
+        }
+        if (typeof params.justification !== "undefined") {
+            var just = mapJustification(params.justification);
+            if (just) {
+                t.justification = just;
+            }
+        }
+
+        var maxIterations = typeof params.maxIterations !== "undefined" ? params.maxIterations : 16;
+        var minSize = typeof params.minSize !== "undefined" ? params.minSize : 4;
+        var allowUpscale = params.allowUpscale ? true : false;
+
+        // We fit based on bounds measured in px. This is robust across fonts and wrapping.
+        var i;
+        var lastBounds = null;
+        var lastSize = Number(t.size);
+        for (i = 0; i < maxIterations; i++) {
+            var b = getLayerBoundsPx(layer);
+            lastBounds = b;
+
+            var overflowX = b[2] - right;
+            var overflowY = b[3] - bottom;
+            var underX = left - b[0];
+            var underY = top - b[1];
+
+            var fits = (b[0] >= left) && (b[1] >= top) && (b[2] <= right) && (b[3] <= bottom);
+            if (fits) {
+                break;
+            }
+
+            var sizeNow = Number(t.size);
+            if (!sizeNow || isNaN(sizeNow)) {
+                throw new Error("Invalid text size");
+            }
+
+            // Determine a scale factor from whichever dimension overflows most.
+            var scale = 1.0;
+            if (overflowX > 0) {
+                scale = Math.min(scale, (right - left) / Math.max(1, (b[2] - b[0])) * 0.98);
+            }
+            if (overflowY > 0) {
+                scale = Math.min(scale, (bottom - top) / Math.max(1, (b[3] - b[1])) * 0.98);
+            }
+
+            if (scale >= 1.0) {
+                // Not a simple overflow; usually baseline/top-left differences. Nudge to box.
+                var dx = 0;
+                var dy = 0;
+                if (underX > 0) dx += underX;
+                if (underY > 0) dy += underY;
+                if (overflowX > 0) dx -= overflowX;
+                if (overflowY > 0) dy -= overflowY;
+                t.position = [t.position[0] + dx, t.position[1] + dy];
+                continue;
+            }
+
+            var newSize = Math.max(minSize, Math.round(sizeNow * scale * 100) / 100);
+            if (!allowUpscale && newSize > sizeNow) {
+                newSize = sizeNow;
+            }
+            if (newSize === sizeNow || newSize === lastSize) {
+                // Ensure progress.
+                newSize = Math.max(minSize, sizeNow - 0.5);
+            }
+            lastSize = newSize;
+            t.size = newSize;
+
+            // Keep leading proportional unless user explicitly set it.
+            if (typeof params.leading === "undefined") {
+                try {
+                    t.autoLeading = false;
+                    t.leading = Math.max(newSize * 1.4, newSize + 1);
+                } catch (e2) {
+                    // Ignore; some text settings throw depending on font/state.
+                }
+            }
+        }
+
+        return {
+            id: layer.id,
+            name: layer.name,
+            iterations: i,
+            bounds: lastBounds,
+            box: [left, top, right, bottom],
+            text: getTextLayerState(layer)
+        };
+    }
+
     function addEmptyLayer(doc, params) {
         var layer = doc.artLayers.add();
         if (params && params.name) {
@@ -1617,6 +1771,8 @@
             response.data = addParagraphTextLayer(app.activeDocument, request.params);
         } else if (command === "update_text_layer") {
             response.data = updateTextLayer(app.activeDocument, request.params);
+        } else if (command === "fit_text_to_box") {
+            response.data = fitTextToBox(app.activeDocument, request.params);
         } else if (command === "add_empty_layer") {
             response.data = addEmptyLayer(app.activeDocument, request.params);
         } else if (command === "merge_active_down") {

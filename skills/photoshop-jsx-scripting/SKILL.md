@@ -34,6 +34,7 @@ Use this skill to drive Photoshop with ExtendScript/JSX, look up DOM objects/met
 - `add_text_layer` (requires params)
 - `add_paragraph_text_layer` (requires params)
 - `update_text_layer` (requires params)
+- `fit_text_to_box` (requires params)
 - `merge_active_down`
 - `merge_visible_layers`
 - `duplicate_active_layer` (requires params)

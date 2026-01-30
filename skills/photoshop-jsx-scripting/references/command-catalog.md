@@ -129,6 +129,22 @@ Use this table to design requests and responses for the JSX bridge.
     - `boxHeight` (number, optional, px; sets paragraph text)
   - Response: `{ id, name, kind }`
 
+- `fit_text_to_box`
+  - Params:
+    - `layerId` (number, optional)
+    - `layerName` (string, optional)
+    - `box` (object, required; `x`, `y`, `width`, `height` in px)
+    - `padding` (number, optional, px; inset inside box, default 0)
+    - `size` (number, optional; initial point size)
+    - `leading` (number, optional; if omitted, auto-adjusts proportionally)
+    - `autoLeading` (boolean, optional)
+    - `tracking` (number, optional)
+    - `justification` (string, optional)
+    - `minSize` (number, optional, default 4)
+    - `maxIterations` (number, optional, default 16)
+    - `allowUpscale` (boolean, optional, default false)
+  - Response: `{ id, name, iterations, bounds, box, text }`
+
 - `merge_active_down`
   - Params: none
   - Response: `{ name, id }`
