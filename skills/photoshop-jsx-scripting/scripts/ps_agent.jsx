@@ -1508,6 +1508,380 @@
         return state;
     }
 
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function isCjkText(text) {
+        return /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/.test(text);
+    }
+
+    function splitLines(text) {
+        return normalizeTextContent(text).split("\r");
+    }
+
+    function wrapLatinLine(line, maxChars) {
+        var parts = line.split(" ");
+        var lines = [];
+        var current = "";
+        for (var i = 0; i < parts.length; i++) {
+            var word = parts[i];
+            if (current === "") {
+                if (word.length > maxChars) {
+                    var start = 0;
+                    while (start < word.length) {
+                        lines.push(word.substr(start, maxChars));
+                        start += maxChars;
+                    }
+                } else {
+                    current = word;
+                }
+            } else if (current.length + 1 + word.length <= maxChars) {
+                current += " " + word;
+            } else {
+                lines.push(current);
+                current = "";
+                if (word.length > maxChars) {
+                    var j = 0;
+                    while (j < word.length) {
+                        lines.push(word.substr(j, maxChars));
+                        j += maxChars;
+                    }
+                } else {
+                    current = word;
+                }
+            }
+        }
+        if (current !== "") {
+            lines.push(current);
+        }
+        return lines;
+    }
+
+    function wrapCjkLine(line, maxChars) {
+        var lines = [];
+        var start = 0;
+        while (start < line.length) {
+            lines.push(line.substr(start, maxChars));
+            start += maxChars;
+        }
+        return lines;
+    }
+
+    function autoLineBreakText(text, size, boxWidth, tracking, enabled) {
+        if (!enabled) {
+            return normalizeTextContent(text);
+        }
+        var safeSize = Math.max(1, size);
+        var trackingAdjust = (tracking || 0) * safeSize / 1000;
+        var cjk = isCjkText(text);
+        var baseChar = safeSize * (cjk ? 1.0 : 0.55);
+        var charWidth = Math.max(safeSize * 0.4, baseChar + trackingAdjust);
+        var maxChars = Math.max(1, Math.floor(boxWidth / charWidth));
+        var inputLines = splitLines(text);
+        var outLines = [];
+        for (var i = 0; i < inputLines.length; i++) {
+            var line = inputLines[i];
+            if (line === "") {
+                outLines.push("");
+                continue;
+            }
+            var wrapped = cjk ? wrapCjkLine(line, maxChars) : wrapLatinLine(line, maxChars);
+            for (var j = 0; j < wrapped.length; j++) {
+                outLines.push(wrapped[j]);
+            }
+        }
+        return outLines.join("\r");
+    }
+
+    function resolveStyleTracking(params) {
+        var preset = params && params.stylePreset ? String(params.stylePreset).toLowerCase() : null;
+        var tracking = typeof params.tracking !== "undefined" ? params.tracking : null;
+        if (preset === "title") {
+            if (tracking === null || tracking === undefined) {
+                tracking = -5;
+            }
+            tracking = clamp(tracking, -10, 0);
+        } else if (preset === "body") {
+            if (tracking === null || tracking === undefined) {
+                tracking = 10;
+            }
+            tracking = clamp(tracking, 0, 20);
+        } else {
+            if (tracking === null || tracking === undefined) {
+                tracking = 0;
+            }
+        }
+        return tracking;
+    }
+
+    function resolveLeadingMultiplier(params) {
+        var preset = params && params.stylePreset ? String(params.stylePreset).toLowerCase() : null;
+        if (preset === "title") {
+            return 1.1;
+        }
+        if (preset === "body") {
+            return 1.4;
+        }
+        return 1.2;
+    }
+
+    function applyTextColor(textItem, color) {
+        if (!color || color.length !== 3) {
+            return;
+        }
+        var textColor = new SolidColor();
+        textColor.rgb.red = color[0];
+        textColor.rgb.green = color[1];
+        textColor.rgb.blue = color[2];
+        textItem.color = textColor;
+    }
+
+    function applyParagraphTextBox(textItem, left, top, width, height) {
+        textItem.kind = TextType.PARAGRAPHTEXT;
+        textItem.position = [left, top];
+        textItem.width = toUnitValue(width, "px");
+        textItem.height = toUnitValue(height, "px");
+    }
+
+    function applyTextAlignment(textItem, params) {
+        var alignValue = params && typeof params.align !== "undefined" ? params.align : params.justification;
+        if (typeof alignValue === "undefined") {
+            return;
+        }
+        var justification = mapJustification(alignValue);
+        if (justification) {
+            textItem.justification = justification;
+        }
+    }
+
+    function measureTextBounds(doc, params) {
+        if (!params || typeof params.text === "undefined") {
+            throw new Error("Missing params.text");
+        }
+        var prevLayer = doc.activeLayer;
+        var layer = doc.artLayers.add();
+        layer.kind = LayerKind.TEXT;
+        layer.name = "Measure Text Bounds";
+        var textItem = layer.textItem;
+        textItem.kind = TextType.POINTTEXT;
+        textItem.contents = normalizeTextContent(params.text);
+        if (params.font) {
+            textItem.font = params.font;
+        }
+        if (params.size) {
+            textItem.size = params.size;
+        }
+        if (params.position && params.position.length === 2) {
+            textItem.position = [params.position[0], params.position[1]];
+        } else {
+            textItem.position = [0, 0];
+        }
+        if (typeof params.tracking !== "undefined") {
+            textItem.tracking = params.tracking;
+        }
+        if (typeof params.leading !== "undefined") {
+            textItem.autoLeading = false;
+            textItem.leading = params.leading;
+        }
+        var bounds = getLayerBoundsPx(layer);
+        var width = bounds[2] - bounds[0];
+        var height = bounds[3] - bounds[1];
+        layer.remove();
+        if (prevLayer) {
+            doc.activeLayer = prevLayer;
+        }
+        return { width: width, height: height, bounds: bounds };
+    }
+
+    function fitTextLayerToBox(doc, layer, params, box, textSource) {
+        var padding = typeof params.padding !== "undefined" ? params.padding : 0;
+        var left = box.x + padding;
+        var top = box.y + padding;
+        var right = box.x + box.width - padding;
+        var bottom = box.y + box.height - padding;
+        if (right <= left || bottom <= top) {
+            throw new Error("Invalid box after padding");
+        }
+
+        var t = layer.textItem;
+        applyParagraphTextBox(t, left, top, right - left, bottom - top);
+        applyTextAlignment(t, params);
+        if (params.font) {
+            t.font = params.font;
+        }
+        if (params.color) {
+            applyTextColor(t, params.color);
+        }
+
+        var tracking = resolveStyleTracking(params);
+        var leadingMultiplier = resolveLeadingMultiplier(params);
+        var hasLeading = (typeof params.leading !== "undefined");
+        var autoLeadingOverride = (typeof params.autoLeading !== "undefined") ? (params.autoLeading ? true : false) : null;
+        var useAutoLeading = autoLeadingOverride === true;
+        var fixedLeading = hasLeading ? params.leading : null;
+        var autoLineBreak = params.autoLineBreak ? true : false;
+
+        var minSize = typeof params.minSize !== "undefined" ? params.minSize : 4;
+        var maxSize = typeof params.maxSize !== "undefined" ? params.maxSize : Math.max(minSize, Math.min(right - left, bottom - top));
+        var currentSize = Number(t.size) || 12;
+        if (!params.allowUpscale) {
+            maxSize = Math.min(maxSize, currentSize);
+        }
+
+        var size = typeof params.size !== "undefined" ? params.size : maxSize;
+        size = clamp(size, minSize, maxSize);
+
+        var sourceText = typeof textSource !== "undefined" && textSource !== null ? textSource : t.contents;
+        sourceText = normalizeTextContent(sourceText);
+
+        var maxIterations = typeof params.maxIterations !== "undefined" ? params.maxIterations : 18;
+        var lastSize = null;
+        var bounds = null;
+        var i;
+        for (i = 0; i < maxIterations; i++) {
+            if (size < minSize) {
+                size = minSize;
+            }
+            t.size = size;
+            if (typeof tracking !== "undefined" && tracking !== null) {
+                t.tracking = tracking;
+            }
+            if (useAutoLeading) {
+                try {
+                    t.autoLeading = true;
+                } catch (e) {
+                }
+            } else if (hasLeading) {
+                try {
+                    t.autoLeading = false;
+                    t.leading = fixedLeading;
+                } catch (e2) {
+                }
+            } else {
+                try {
+                    t.autoLeading = false;
+                    t.leading = Math.round(size * leadingMultiplier * 100) / 100;
+                } catch (e3) {
+                }
+            }
+
+            if (autoLineBreak) {
+                t.contents = autoLineBreakText(sourceText, size, right - left, tracking, true);
+            } else if (typeof params.text !== "undefined") {
+                t.contents = sourceText;
+            }
+
+            bounds = getLayerBoundsPx(layer);
+            var fits = bounds[0] >= left && bounds[1] >= top && bounds[2] <= right && bounds[3] <= bottom;
+            if (fits) {
+                break;
+            }
+
+            var width = Math.max(1, bounds[2] - bounds[0]);
+            var height = Math.max(1, bounds[3] - bounds[1]);
+            var scaleW = (right - left) / width;
+            var scaleH = (bottom - top) / height;
+            var scale = Math.min(scaleW, scaleH, 0.98);
+            if (scale >= 1) {
+                size -= 0.5;
+            } else {
+                var newSize = size * scale;
+                if (Math.abs(newSize - size) < 0.25) {
+                    newSize = size - 0.5;
+                }
+                size = newSize;
+            }
+            if (lastSize !== null && Math.abs(size - lastSize) < 0.1) {
+                size -= 0.5;
+            }
+            lastSize = size;
+            if (size <= minSize) {
+                size = minSize;
+            }
+        }
+
+        if (useAutoLeading) {
+            try {
+                t.autoLeading = true;
+            } catch (e4) {
+            }
+        } else if (!hasLeading) {
+            try {
+                t.autoLeading = false;
+                t.leading = Math.round(size * leadingMultiplier * 100) / 100;
+            } catch (e5) {
+            }
+        }
+        bounds = getLayerBoundsPx(layer);
+
+        if (params.opticalCenter) {
+            var opticalShift = (box.height || (bottom - top)) * 0.03;
+            var maxShift = bounds[1] - top;
+            var applied = Math.min(opticalShift, maxShift);
+            if (applied > 0) {
+                t.position = [t.position[0], t.position[1] - applied];
+                bounds = getLayerBoundsPx(layer);
+            }
+        }
+
+        var leadingValue = null;
+        try {
+            leadingValue = Number(t.leading);
+        } catch (e6) {
+            leadingValue = null;
+        }
+        return {
+            iterations: i,
+            bounds: bounds,
+            size: Number(t.size),
+            tracking: Number(t.tracking),
+            leading: leadingValue,
+            box: [left, top, right, bottom]
+        };
+    }
+
+    function addTextLayerAuto(doc, params) {
+        if (!params || typeof params.text === "undefined") {
+            throw new Error("Missing params.text");
+        }
+        if (!params.box || typeof params.box.x === "undefined" || typeof params.box.y === "undefined" ||
+            typeof params.box.width === "undefined" || typeof params.box.height === "undefined") {
+            throw new Error("Missing params.box (x/y/width/height)");
+        }
+
+        var layer = doc.artLayers.add();
+        layer.kind = LayerKind.TEXT;
+        layer.name = params.name || "Auto Text";
+        var t = layer.textItem;
+        t.contents = normalizeTextContent(params.text);
+
+        var fitParams = {};
+        for (var k in params) {
+            if (params.hasOwnProperty(k)) {
+                fitParams[k] = params[k];
+            }
+        }
+        if (typeof fitParams.autoLineBreak === "undefined") {
+            fitParams.autoLineBreak = true;
+        }
+        if (typeof fitParams.allowUpscale === "undefined") {
+            fitParams.allowUpscale = true;
+        }
+
+        var fit = fitTextLayerToBox(doc, layer, fitParams, fitParams.box, fitParams.text);
+
+        return {
+            id: layer.id,
+            name: layer.name,
+            bounds: fit.bounds,
+            size: fit.size,
+            tracking: fit.tracking,
+            leading: fit.leading,
+            iterations: fit.iterations
+        };
+    }
+
     function fitTextToBox(doc, params) {
         if (!params || (!params.layerId && !params.layerName)) {
             throw new Error("Missing params.layerId or params.layerName");
@@ -1525,121 +1899,18 @@
             throw new Error("Layer is not a text layer");
         }
 
-        var box = params.box;
-        var padding = typeof params.padding !== "undefined" ? params.padding : 0;
-        var left = box.x + padding;
-        var top = box.y + padding;
-        var right = box.x + box.width - padding;
-        var bottom = box.y + box.height - padding;
-        if (right <= left || bottom <= top) {
-            throw new Error("Invalid box after padding");
-        }
-
         doc.activeLayer = layer;
-        var t = layer.textItem;
-
-        // Force paragraph text so the box constrains wrapping and bounds are predictable.
-        t.kind = TextType.PARAGRAPHTEXT;
-        t.position = [left, top];
-        t.width = toUnitValue(right - left, "px");
-        t.height = toUnitValue(bottom - top, "px");
-
-        // Optional initial typography knobs.
-        if (typeof params.size !== "undefined") {
-            t.size = params.size;
-        }
-        if (typeof params.tracking !== "undefined") {
-            t.tracking = params.tracking;
-        }
-        if (typeof params.leading !== "undefined") {
-            t.autoLeading = false;
-            t.leading = params.leading;
-        } else if (typeof params.autoLeading !== "undefined") {
-            t.autoLeading = params.autoLeading ? true : false;
-        }
-        if (typeof params.justification !== "undefined") {
-            var just = mapJustification(params.justification);
-            if (just) {
-                t.justification = just;
-            }
-        }
-
-        var maxIterations = typeof params.maxIterations !== "undefined" ? params.maxIterations : 16;
-        var minSize = typeof params.minSize !== "undefined" ? params.minSize : 4;
-        var allowUpscale = params.allowUpscale ? true : false;
-
-        // We fit based on bounds measured in px. This is robust across fonts and wrapping.
-        var i;
-        var lastBounds = null;
-        var lastSize = Number(t.size);
-        for (i = 0; i < maxIterations; i++) {
-            var b = getLayerBoundsPx(layer);
-            lastBounds = b;
-
-            var overflowX = b[2] - right;
-            var overflowY = b[3] - bottom;
-            var underX = left - b[0];
-            var underY = top - b[1];
-
-            var fits = (b[0] >= left) && (b[1] >= top) && (b[2] <= right) && (b[3] <= bottom);
-            if (fits) {
-                break;
-            }
-
-            var sizeNow = Number(t.size);
-            if (!sizeNow || isNaN(sizeNow)) {
-                throw new Error("Invalid text size");
-            }
-
-            // Determine a scale factor from whichever dimension overflows most.
-            var scale = 1.0;
-            if (overflowX > 0) {
-                scale = Math.min(scale, (right - left) / Math.max(1, (b[2] - b[0])) * 0.98);
-            }
-            if (overflowY > 0) {
-                scale = Math.min(scale, (bottom - top) / Math.max(1, (b[3] - b[1])) * 0.98);
-            }
-
-            if (scale >= 1.0) {
-                // Not a simple overflow; usually baseline/top-left differences. Nudge to box.
-                var dx = 0;
-                var dy = 0;
-                if (underX > 0) dx += underX;
-                if (underY > 0) dy += underY;
-                if (overflowX > 0) dx -= overflowX;
-                if (overflowY > 0) dy -= overflowY;
-                t.position = [t.position[0] + dx, t.position[1] + dy];
-                continue;
-            }
-
-            var newSize = Math.max(minSize, Math.round(sizeNow * scale * 100) / 100);
-            if (!allowUpscale && newSize > sizeNow) {
-                newSize = sizeNow;
-            }
-            if (newSize === sizeNow || newSize === lastSize) {
-                // Ensure progress.
-                newSize = Math.max(minSize, sizeNow - 0.5);
-            }
-            lastSize = newSize;
-            t.size = newSize;
-
-            // Keep leading proportional unless user explicitly set it.
-            if (typeof params.leading === "undefined") {
-                try {
-                    t.autoLeading = false;
-                    t.leading = Math.max(newSize * 1.4, newSize + 1);
-                } catch (e2) {
-                    // Ignore; some text settings throw depending on font/state.
-                }
-            }
-        }
+        var fit = fitTextLayerToBox(doc, layer, params, params.box, typeof params.text !== "undefined" ? params.text : null);
 
         return {
             id: layer.id,
             name: layer.name,
-            iterations: i,
-            bounds: lastBounds,
-            box: [left, top, right, bottom],
+            iterations: fit.iterations,
+            bounds: fit.bounds,
+            box: fit.box,
+            size: fit.size,
+            tracking: fit.tracking,
+            leading: fit.leading,
             text: getTextLayerState(layer)
         };
     }
@@ -1767,10 +2038,14 @@
             response.data = rotateCanvas(app.activeDocument, request.params);
         } else if (command === "add_text_layer") {
             response.data = addTextLayer(app.activeDocument, request.params);
+        } else if (command === "add_text_layer_auto") {
+            response.data = addTextLayerAuto(app.activeDocument, request.params);
         } else if (command === "add_paragraph_text_layer") {
             response.data = addParagraphTextLayer(app.activeDocument, request.params);
         } else if (command === "update_text_layer") {
             response.data = updateTextLayer(app.activeDocument, request.params);
+        } else if (command === "measure_text_bounds") {
+            response.data = measureTextBounds(app.activeDocument, request.params);
         } else if (command === "fit_text_to_box") {
             response.data = fitTextToBox(app.activeDocument, request.params);
         } else if (command === "add_empty_layer") {

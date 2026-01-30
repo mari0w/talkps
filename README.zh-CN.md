@@ -40,6 +40,7 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 
 ```bash
 ./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"add_text_layer","params":{"text":"Hello","font":"ArialMT","size":48,"color":[255,0,0],"position":[100,200]}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"add_text_layer_auto","params":{"text":"Auto layout headline","box":{"x":80,"y":120,"width":640,"height":220},"font":"HelveticaNeue-Bold","stylePreset":"title","align":"CENTER","maxSize":96,"minSize":24,"autoLineBreak":true,"opticalCenter":true}}'
 ./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"create_document","params":{"width":1200,"height":800,"resolution":72,"name":"Hero","mode":"RGB","fill":"WHITE"}}'
 ./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"add_empty_layer","params":{"name":"Base"}}'
 ./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"merge_active_down"}'
@@ -62,6 +63,7 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 - `get_document_info`：返回当前文档的尺寸、颜色模式等信息。
 - `list_layers`：列出当前文档中的图层名称、ID、可见性。
 - `add_text_layer`：按指定内容与样式新增文字图层。
+- `add_text_layer_auto`：在指定区域内自动排版文字图层。
 - `add_empty_layer`：新增一个空白像素图层（可指定名称）。
 - `merge_active_down`：将当前图层与下方图层合并。
 - `merge_visible_layers`：合并所有可见图层。
@@ -140,6 +142,9 @@ Photoshop 技能包位于 `skills/photoshop-jsx-scripting`，包含：
 
 **文字相关**
 - `add_text_layer`（设置文字内容、字体、字号、颜色、位置）
+- `measure_text_bounds`（测量文字边界宽高）
+- `add_text_layer_auto`（在指定盒子内自动适配字号）
+- `fit_text_to_box`（将已有文字图层自动适配到盒子）
 
 **图层管理**
 - `add_empty_layer`（新增空白像素图层）

@@ -97,6 +97,41 @@ Use this table to design requests and responses for the JSX bridge.
     - `name` (string, optional)
   - Response: `{ name, id }`
 
+- `measure_text_bounds`
+  - Params:
+    - `text` (string, required)
+    - `font` (string, optional, PostScript name)
+    - `size` (number, optional)
+    - `tracking` (number, optional)
+    - `leading` (number, optional)
+    - `position` (array `[x,y]`, optional)
+  - Response: `{ width, height, bounds }`
+  - Example:
+    ```json
+    {"command":"measure_text_bounds","params":{"text":"Hello world","font":"ArialMT","size":48,"tracking":0}}
+    ```
+
+- `add_text_layer_auto`
+  - Params:
+    - `text` (string, required)
+    - `box` (object, required; `x`, `y`, `width`, `height` in px)
+    - `font` (string, optional, PostScript name)
+    - `stylePreset` (string, optional; `title` or `body`)
+    - `color` (array `[r,g,b]`, optional)
+    - `align` (string, optional, `LEFT`, `RIGHT`, `CENTER`, `FULLYJUSTIFIED`)
+    - `maxSize` (number, optional)
+    - `minSize` (number, optional, default 4)
+    - `tracking` (number, optional)
+    - `leading` (number, optional)
+    - `autoLineBreak` (boolean, optional, default true)
+    - `opticalCenter` (boolean, optional)
+    - `name` (string, optional)
+  - Response: `{ id, name, bounds, size, tracking, leading, iterations }`
+  - Example:
+    ```json
+    {"command":"add_text_layer_auto","params":{"text":"Auto layout headline","box":{"x":80,"y":120,"width":640,"height":220},"font":"HelveticaNeue-Bold","stylePreset":"title","color":[20,20,20],"align":"CENTER","maxSize":96,"minSize":24,"autoLineBreak":true,"opticalCenter":true}}
+    ```
+
 - `add_paragraph_text_layer`
   - Params:
     - `text` (string, required)
@@ -140,10 +175,18 @@ Use this table to design requests and responses for the JSX bridge.
     - `autoLeading` (boolean, optional)
     - `tracking` (number, optional)
     - `justification` (string, optional)
+    - `stylePreset` (string, optional; `title` or `body`)
+    - `autoLineBreak` (boolean, optional)
+    - `opticalCenter` (boolean, optional)
     - `minSize` (number, optional, default 4)
-    - `maxIterations` (number, optional, default 16)
+    - `maxSize` (number, optional)
+    - `maxIterations` (number, optional, default 18)
     - `allowUpscale` (boolean, optional, default false)
-  - Response: `{ id, name, iterations, bounds, box, text }`
+  - Response: `{ id, name, iterations, bounds, box, size, tracking, leading, text }`
+  - Example:
+    ```json
+    {"command":"fit_text_to_box","params":{"layerName":"Body Copy","box":{"x":120,"y":420,"width":520,"height":320},"stylePreset":"body","minSize":12,"maxSize":28,"autoLineBreak":true,"opticalCenter":false}}
+    ```
 
 - `merge_active_down`
   - Params: none

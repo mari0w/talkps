@@ -40,6 +40,7 @@ This `ping` command checks that Photoshop can execute the JSX bridge and that th
 
 ```bash
 ./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"add_text_layer","params":{"text":"Hello","font":"ArialMT","size":48,"color":[255,0,0],"position":[100,200]}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"add_text_layer_auto","params":{"text":"Auto layout headline","box":{"x":80,"y":120,"width":640,"height":220},"font":"HelveticaNeue-Bold","stylePreset":"title","align":"CENTER","maxSize":96,"minSize":24,"autoLineBreak":true,"opticalCenter":true}}'
 ./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"create_document","params":{"width":1200,"height":800,"resolution":72,"name":"Hero","mode":"RGB","fill":"WHITE"}}'
 ./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"add_empty_layer","params":{"name":"Base"}}'
 ./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"merge_active_down"}'
@@ -62,6 +63,7 @@ Example command meanings:
 - `get_document_info`: Return the active document's size, mode, and other metadata.
 - `list_layers`: List layer names, IDs, and visibility in the active document.
 - `add_text_layer`: Add a new text layer with the provided content and styling.
+- `add_text_layer_auto`: Add an auto-layout text layer that fits within a box.
 - `add_empty_layer`: Add a blank raster layer (optionally named).
 - `merge_active_down`: Merge the active layer with the layer below it.
 - `merge_visible_layers`: Merge all currently visible layers into one.
@@ -140,6 +142,9 @@ These are the Photoshop operations currently implemented in `skills/photoshop-js
 
 **Text**
 - `add_text_layer` (set text content, font, size, color, position)
+- `measure_text_bounds` (measure text width/height via bounds)
+- `add_text_layer_auto` (auto-fit text inside a box)
+- `fit_text_to_box` (auto-size an existing text layer inside a box)
 
 **Layer management**
 - `add_empty_layer` (add a blank raster layer)
