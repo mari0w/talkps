@@ -15,9 +15,20 @@ Use this skill to drive Photoshop with ExtendScript/JSX, look up DOM objects/met
 
 ## Built-in commands
 - `ping` (health check)
+- `create_document` (requires params)
+- `open_document` (requires params)
 - `get_document_info`
 - `list_layers`
 - `list_fonts`
+- `save_active_document`
+- `save_active_document_as` (requires params)
+- `close_active_document` (optional params)
+- `duplicate_active_document` (optional params)
+- `flatten_active_document`
+- `resize_image` (requires params)
+- `resize_canvas` (requires params)
+- `rotate_canvas` (requires params)
+- `add_empty_layer` (optional params)
 - `add_text_layer` (requires params)
 - `merge_active_down`
 - `merge_visible_layers`
@@ -26,6 +37,7 @@ Use this skill to drive Photoshop with ExtendScript/JSX, look up DOM objects/met
 - `rename_active_layer` (requires params)
 - `set_active_layer_visibility` (requires params)
 - `set_active_layer_opacity` (requires params)
+- `set_active_layer_blend_mode` (requires params)
 
 ## JSON params format
 Send JSON when a command needs parameters:

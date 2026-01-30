@@ -40,6 +40,8 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 
 ```bash
 ./ps_call.sh '{"command":"add_text_layer","params":{"text":"Hello","font":"ArialMT","size":48,"color":[255,0,0],"position":[100,200]}}'
+./ps_call.sh '{"command":"create_document","params":{"width":1200,"height":800,"resolution":72,"name":"Hero","mode":"RGB","fill":"WHITE"}}'
+./ps_call.sh '{"command":"add_empty_layer","params":{"name":"Base"}}'
 ./ps_call.sh '{"command":"merge_active_down"}'
 ./ps_call.sh '{"command":"merge_visible_layers"}'
 ./ps_call.sh '{"command":"list_fonts"}'
@@ -47,13 +49,20 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 ./ps_call.sh '{"command":"rename_active_layer","params":{"name":"Hero"}}'
 ./ps_call.sh '{"command":"set_active_layer_visibility","params":{"visible":false}}'
 ./ps_call.sh '{"command":"set_active_layer_opacity","params":{"opacity":55}}'
+./ps_call.sh '{"command":"set_active_layer_blend_mode","params":{"mode":"MULTIPLY"}}'
+./ps_call.sh '{"command":"resize_image","params":{"width":800,"height":600,"resample":"BICUBIC"}}'
+./ps_call.sh '{"command":"resize_canvas","params":{"width":1000,"height":800,"anchor":"MIDDLECENTER"}}'
+./ps_call.sh '{"command":"rotate_canvas","params":{"angle":90}}'
+./ps_call.sh '{"command":"save_active_document_as","params":{"path":"/tmp/hero.psd","format":"psd"}}'
 ./ps_call.sh '{"command":"delete_active_layer"}'
 ```
 
 示例命令含义：
+- `create_document`：创建指定尺寸/模式/底色的新文档。
 - `get_document_info`：返回当前文档的尺寸、颜色模式等信息。
 - `list_layers`：列出当前文档中的图层名称、ID、可见性。
 - `add_text_layer`：按指定内容与样式新增文字图层。
+- `add_empty_layer`：新增一个空白像素图层（可指定名称）。
 - `merge_active_down`：将当前图层与下方图层合并。
 - `merge_visible_layers`：合并所有可见图层。
 - `list_fonts`：返回可用字体列表。
@@ -61,6 +70,11 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 - `rename_active_layer`：重命名当前图层。
 - `set_active_layer_visibility`：显示或隐藏当前图层。
 - `set_active_layer_opacity`：设置当前图层不透明度（0-100）。
+- `set_active_layer_blend_mode`：设置当前图层的混合模式。
+- `resize_image`：调整像素尺寸或分辨率。
+- `resize_canvas`：调整画布尺寸并指定锚点。
+- `rotate_canvas`：按角度旋转画布。
+- `save_active_document_as`：保存到指定路径/格式。
 - `delete_active_layer`：删除当前图层。
 
 ### 配置覆盖
@@ -98,10 +112,23 @@ Photoshop 技能包位于 `skills/photoshop-jsx-scripting`，包含：
 - `list_layers`（图层列表、ID 与可见性）
 - `list_fonts`（可用字体列表）
 
+**文档管理**
+- `create_document`（创建新文档）
+- `open_document`（打开已有文档）
+- `save_active_document`（保存当前文档）
+- `save_active_document_as`（按指定格式保存）
+- `close_active_document`（按保存选项关闭）
+- `duplicate_active_document`（复制当前文档）
+- `flatten_active_document`（合并为单一背景）
+- `resize_image`（调整像素尺寸/分辨率）
+- `resize_canvas`（调整画布尺寸）
+- `rotate_canvas`（旋转画布）
+
 **文字相关**
 - `add_text_layer`（设置文字内容、字体、字号、颜色、位置）
 
 **图层管理**
+- `add_empty_layer`（新增空白像素图层）
 - `merge_active_down`（合并当前图层与下方图层）
 - `merge_visible_layers`（合并所有可见图层）
 - `duplicate_active_layer`（复制当前图层）
@@ -109,6 +136,7 @@ Photoshop 技能包位于 `skills/photoshop-jsx-scripting`，包含：
 - `rename_active_layer`（重命名当前图层）
 - `set_active_layer_visibility`（切换当前图层可见性）
 - `set_active_layer_opacity`（设置当前图层不透明度）
+- `set_active_layer_blend_mode`（设置当前图层混合模式）
 
 ## 官方文档来源
 
