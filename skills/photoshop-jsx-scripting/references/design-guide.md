@@ -1,0 +1,143 @@
+# 设计指南（排版/构图/视觉层级）
+
+本指南是给模型“怎么设计”的可执行规则，聚焦字体排版、布局、层级与视觉中心。内容结合常见排版原则（字距/行距/网格/对齐）与可落地的计算规则。
+
+> 参考来源：
+> - Typography（字体排版基础）https://en.wikipedia.org/wiki/Typography
+> - Leading（行距）https://en.wikipedia.org/wiki/Leading
+> - Kerning（字偶间距）https://en.wikipedia.org/wiki/Kerning
+> - Grid（网格系统）https://en.wikipedia.org/wiki/Grid_(graphic_design)
+
+---
+
+## 1) 视觉层级（Hierarchy）
+**目标：** 让用户第一眼就知道“重点”。
+
+- 至少 2 个层级：标题 > 正文/说明。
+- 标题字号通常是正文的 1.6–3.0 倍。
+- 同一画面字体不要超过 2 种（含字重）。
+- 标题常用较粗字重；正文使用常规字重。
+
+**可执行规则：**
+- `title.size = min(maxW, maxH) * 0.08 ~ 0.14`
+- `body.size = title.size * 0.35 ~ 0.55`
+
+---
+
+## 2) 位置与对齐（Alignment）
+**目标：** 视觉稳定。
+
+- 默认使用网格/安全区：左右/上下留 5%–10% 空白。
+- 文字块优先对齐左边界或中线，不要“半居中”。
+- 视觉居中 != 数学居中：文本块可向上微调 2%–4%（光学居中）。
+
+**可执行规则：**
+- `safe = 0.07 * canvasWidth`（左右）
+- `safeY = 0.08 * canvasHeight`（上下）
+- `opticalCenterY = box.y - (0.02 ~ 0.04)*box.height`
+
+---
+
+## 3) 行距（Leading）
+**原则：** 行距是可读性的关键（来源：Leading 规范）。
+
+- 标题：`leading = size * 1.05 ~ 1.20`
+- 正文：`leading = size * 1.3 ~ 1.6`
+- 行距过小会拥挤，过大可读性下降。
+
+**可执行规则：**
+- 若 `stylePreset=title` → `leading = size * 1.1`
+- 若 `stylePreset=body` → `leading = size * 1.4`
+
+---
+
+## 4) 字距/追踪（Tracking）与字偶间距（Kerning）
+**原则：** Tracking 是全局字距，Kerning 是成对字距（来源：Kerning）。
+
+- 标题大字可轻微“收紧”或略放开：`-20 ~ +30`
+- 正文通常 `0 ~ +20`
+- 全大写英文建议略加 tracking（+10~+40）。
+
+**可执行规则：**
+- `tracking = -10`（标题默认）
+- `tracking = +10`（正文默认）
+
+---
+
+## 5) 网格系统（Grid）
+**目标：** 对齐与节奏感。
+
+- 12 栅格或 8pt/10pt grid 都可。
+- 所有块状元素的 x/y/宽高尽量落在网格线上。
+
+**可执行规则：**
+- `grid = 8px`
+- `snap(x) = round(x/grid)*grid`
+- 文本框 `box` 的 x/y/w/h 经过 `snap` 对齐。
+
+---
+
+## 6) 字体选择（Typeface）
+**原则：** 风格一致、对比明确。
+
+- 中文标题：黑体类（思源黑体/普惠体/鸿蒙字体）
+- 正文：中性字体（思源黑体/苹方/微软雅黑）
+- 英文标题：无衬线或几何字体；正文用易读字体
+
+**可执行策略：**
+- `title.font = SansBold`
+- `body.font = SansRegular`
+
+---
+
+## 7) 文本框适配算法（Fit-to-Box）
+**目标：** 自动调整字号/行距使文本不溢出。
+
+**基本流程：**
+1. 设定初始字号（maxSize）
+2. 获取 bounds
+3. 若超出 box → 逐步减小字号
+4. 直到 bounds 进入 box 或达到 minSize
+
+**实现提示：**
+- 循环上限 12–20 次
+- 字号步进可用 `1 ~ 4`
+- 每次调整后重算 bounds
+
+---
+
+## 8) 自动换行策略
+**目的：** 多行标题更美观。
+
+- 英文：空格分词后，保持每行长度接近
+- 中文：估算每行最大字数，保持行数均衡
+
+**可执行规则：**
+- `maxChars = floor(box.width / (size * 0.55))`（中文估算）
+- 若行数差大于 1，则重新分行
+
+---
+
+## 9) 使用建议（模板化）
+**标题海报模板：**
+- box: 画布宽度 70% 高度 25% 的区域
+- stylePreset: title
+- align: CENTER
+- opticalCenter: true
+
+**正文模板：**
+- box: 画布宽度 60% 高度 40% 的区域
+- stylePreset: body
+- align: LEFT
+- opticalCenter: false
+
+---
+
+## 10) 设计决策优先级
+1) 层级 > 2) 对齐 > 3) 字距/行距 > 4) 字体选择 > 5) 装饰效果
+
+当“看起来不对劲”时，优先检查：
+- 是否对齐到网格/边界
+- 行距与字号是否匹配
+- 字距是否过松或过紧
+- 是否缺少视觉中心微调

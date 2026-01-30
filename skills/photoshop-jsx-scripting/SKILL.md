@@ -173,3 +173,4 @@ Use this when creating layouts that need visual quality, not just "no overlap".
 - `references/official-docs.md`
 - `references/dom-index.md`
 - `references/command-catalog.md`
+- `references/design-guide.md`（排版/层级/网格/字距/行距/位置计算规则）
