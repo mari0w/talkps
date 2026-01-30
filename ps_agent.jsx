@@ -1,8 +1,10 @@
 #target photoshop
 
 (function () {
-    var requestPath = "/Users/charles/photoshop/ps_request.json";
-    var responsePath = "/Users/charles/photoshop/ps_response.json";
+    var scriptFile = new File($.fileName);
+    var baseDir = scriptFile.parent;
+    var requestPath = baseDir.fsName + "/ps_request.json";
+    var responsePath = baseDir.fsName + "/ps_response.json";
 
     function readFile(path) {
         var f = new File(path);
@@ -72,21 +74,32 @@
         return null;
     }
 
-    function getCommand(raw) {
+    function parseRequest(raw) {
         var s = trim(raw);
         if (s === "") {
-            return null;
+            return { command: null, params: {} };
+        }
+        if (s.charAt(0) === "{" && typeof JSON !== "undefined" && JSON.parse) {
+            try {
+                var parsed = JSON.parse(s);
+                return {
+                    command: parsed.command || null,
+                    params: parsed.params || {}
+                };
+            } catch (err) {
+                // Fall back to string parsing below.
+            }
         }
         // Try JSON-style: {"command":"list_layers"}
         var jsonCmd = extractJsonCommand(s);
         if (jsonCmd) {
-            return jsonCmd;
+            return { command: jsonCmd, params: {} };
         }
         // Try simple style: command=list_layers
         if (s.indexOf("command=") === 0) {
-            return trim(s.substring(8));
+            return { command: trim(s.substring(8)), params: {} };
         }
-        return s;
+        return { command: s, params: {} };
     }
 
     function escapeString(s) {
@@ -188,25 +201,148 @@
         };
     }
 
+    function listFonts() {
+        var fonts = [];
+        for (var i = 0; i < app.fonts.length; i++) {
+            var f = app.fonts[i];
+            fonts.push({
+                name: f.name,
+                family: f.family,
+                style: f.style,
+                postScriptName: f.postScriptName
+            });
+        }
+        return fonts;
+    }
+
+    function addTextLayer(doc, params) {
+        if (!params || !params.text) {
+            throw new Error("Missing params.text");
+        }
+
+        var layer = doc.artLayers.add();
+        layer.kind = LayerKind.TEXT;
+        layer.name = params.name || "Text Layer";
+
+        var textItem = layer.textItem;
+        textItem.contents = params.text;
+
+        if (params.font) {
+            textItem.font = params.font;
+        }
+        if (params.size) {
+            textItem.size = params.size;
+        }
+        if (params.position && params.position.length === 2) {
+            textItem.position = [params.position[0], params.position[1]];
+        }
+        if (params.color && params.color.length === 3) {
+            var textColor = new SolidColor();
+            textColor.rgb.red = params.color[0];
+            textColor.rgb.green = params.color[1];
+            textColor.rgb.blue = params.color[2];
+            textItem.color = textColor;
+        }
+
+        return {
+            name: layer.name,
+            id: layer.id
+        };
+    }
+
+    function mergeActiveDown(doc) {
+        var merged = doc.activeLayer.merge();
+        return {
+            name: merged.name,
+            id: merged.id
+        };
+    }
+
+    function mergeVisible(doc) {
+        doc.mergeVisibleLayers();
+        return { merged: true };
+    }
+
+    function duplicateActiveLayer(doc, params) {
+        var layer = doc.activeLayer;
+        var dup = layer.duplicate();
+        if (params && params.name) {
+            dup.name = params.name;
+        }
+        return { name: dup.name, id: dup.id };
+    }
+
+    function deleteActiveLayer(doc) {
+        var layer = doc.activeLayer;
+        var info = { name: layer.name, id: layer.id };
+        layer.remove();
+        info.deleted = true;
+        return info;
+    }
+
+    function renameActiveLayer(doc, params) {
+        if (!params || !params.name) {
+            throw new Error("Missing params.name");
+        }
+        doc.activeLayer.name = params.name;
+        return { name: doc.activeLayer.name, id: doc.activeLayer.id };
+    }
+
+    function setActiveLayerVisibility(doc, params) {
+        if (!params || typeof params.visible === "undefined") {
+            throw new Error("Missing params.visible");
+        }
+        doc.activeLayer.visible = params.visible ? true : false;
+        return { visible: doc.activeLayer.visible, id: doc.activeLayer.id };
+    }
+
+    function setActiveLayerOpacity(doc, params) {
+        if (!params || typeof params.opacity === "undefined") {
+            throw new Error("Missing params.opacity");
+        }
+        doc.activeLayer.opacity = params.opacity;
+        return { opacity: doc.activeLayer.opacity, id: doc.activeLayer.id };
+    }
+
     var response = { ok: false, data: null, error: null };
 
     try {
-        if (app.documents.length == 0) {
-            throw new Error("No document open");
-        }
-
         var raw = readFile(requestPath);
-        var command = getCommand(raw);
-        var doc = app.activeDocument;
+        var request = parseRequest(raw);
+        var command = request.command;
 
         if (!command) {
             throw new Error("Missing command");
         }
 
-        if (command === "get_document_info") {
-            response.data = getDocumentInfo(doc);
+        if (command !== "ping" && app.documents.length == 0) {
+            throw new Error("No document open");
+        }
+
+        if (command === "ping") {
+            response.data = { status: "ok", message: "pong" };
+        } else if (command === "get_document_info") {
+            response.data = getDocumentInfo(app.activeDocument);
         } else if (command === "list_layers") {
-            response.data = listLayers(doc);
+            response.data = listLayers(app.activeDocument);
+        } else if (command === "list_fonts") {
+            response.data = listFonts();
+        } else if (command === "add_text_layer") {
+            response.data = addTextLayer(app.activeDocument, request.params);
+        } else if (command === "merge_active_down") {
+            response.data = mergeActiveDown(app.activeDocument);
+        } else if (command === "merge_visible_layers") {
+            response.data = mergeVisible(app.activeDocument);
+        } else if (command === "duplicate_active_layer") {
+            response.data = duplicateActiveLayer(app.activeDocument, request.params);
+        } else if (command === "delete_active_layer") {
+            response.data = deleteActiveLayer(app.activeDocument);
+        } else if (command === "rename_active_layer") {
+            response.data = renameActiveLayer(app.activeDocument, request.params);
+        } else if (command === "set_active_layer_visibility") {
+            response.data = setActiveLayerVisibility(app.activeDocument, request.params);
+        } else if (command === "set_active_layer_opacity") {
+            response.data = setActiveLayerOpacity(app.activeDocument, request.params);
         } else {
             throw new Error("Unknown command: " + command);
         }
