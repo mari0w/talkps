@@ -112,6 +112,23 @@ Use this table to design requests and responses for the JSX bridge.
     - `name` (string, optional)
   - Response: `{ name, id }`
 
+- `update_text_layer`
+  - Params:
+    - `layerId` (number, optional)
+    - `layerName` (string, optional)
+    - `text` (string, optional)
+    - `font` (string, optional, PostScript name)
+    - `size` (number, optional)
+    - `leading` (number, optional)
+    - `autoLeading` (boolean, optional)
+    - `tracking` (number, optional)
+    - `justification` (string, optional, `LEFT`, `RIGHT`, `CENTER`, `FULLYJUSTIFIED`)
+    - `color` (array `[r,g,b]`, optional)
+    - `position` (array `[x,y]`, optional)
+    - `boxWidth` (number, optional, px; sets paragraph text)
+    - `boxHeight` (number, optional, px; sets paragraph text)
+  - Response: `{ id, name, kind }`
+
 - `merge_active_down`
   - Params: none
   - Response: `{ name, id }`

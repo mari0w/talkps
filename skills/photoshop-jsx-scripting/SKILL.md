@@ -33,6 +33,7 @@ Use this skill to drive Photoshop with ExtendScript/JSX, look up DOM objects/met
 - `add_empty_layer` (optional params)
 - `add_text_layer` (requires params)
 - `add_paragraph_text_layer` (requires params)
+- `update_text_layer` (requires params)
 - `merge_active_down`
 - `merge_visible_layers`
 - `duplicate_active_layer` (requires params)
@@ -144,6 +145,7 @@ Use this when creating layouts that need visual quality, not just "no overlap".
 
 ## Layout math & bounds checking
 - **Know the canvas**: get width/height via `get_document_info` and set explicit margins.
+- **Units reminder**: text `size/leading` are in points; convert from pixels with `pt = px * 72 / resolution`.
 - **Text fit math**: estimate paragraph height as `lines * leading` (lines ~= text box height / leading).
 - **Box fit**: ensure `text box height >= (lineCount * leading)` and `text box width` fits margins.
 - **Bounds verify**: after placing text, call `get_layer_bounds` and compare against the intended container.

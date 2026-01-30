@@ -1426,6 +1426,70 @@
         };
     }
 
+    function updateTextLayer(doc, params) {
+        if (!params || (!params.layerId && !params.layerName)) {
+            throw new Error("Missing params.layerId or params.layerName");
+        }
+        var layer = resolveLayerFromParams(doc, params);
+        if (!layer) {
+            throw new Error("Layer not found");
+        }
+        if (String(layer.kind) !== String(LayerKind.TEXT)) {
+            throw new Error("Layer is not a text layer");
+        }
+
+        doc.activeLayer = layer;
+        var textItem = layer.textItem;
+
+        if (typeof params.text !== "undefined") {
+            textItem.contents = normalizeTextContent(params.text);
+        }
+        if (typeof params.font !== "undefined") {
+            textItem.font = params.font;
+        }
+        if (typeof params.size !== "undefined") {
+            textItem.size = params.size;
+        }
+        if (typeof params.position !== "undefined" && params.position && params.position.length === 2) {
+            textItem.position = [params.position[0], params.position[1]];
+        }
+        if (typeof params.color !== "undefined" && params.color && params.color.length === 3) {
+            var c = new SolidColor();
+            c.rgb.red = params.color[0];
+            c.rgb.green = params.color[1];
+            c.rgb.blue = params.color[2];
+            textItem.color = c;
+        }
+        if (typeof params.tracking !== "undefined") {
+            textItem.tracking = params.tracking;
+        }
+        if (typeof params.justification !== "undefined") {
+            var just = mapJustification(params.justification);
+            if (just) {
+                textItem.justification = just;
+            }
+        }
+
+        // Paragraph-only sizing/metrics.
+        if (typeof params.boxWidth !== "undefined") {
+            textItem.kind = TextType.PARAGRAPHTEXT;
+            textItem.width = toUnitValue(params.boxWidth, "px");
+        }
+        if (typeof params.boxHeight !== "undefined") {
+            textItem.kind = TextType.PARAGRAPHTEXT;
+            textItem.height = toUnitValue(params.boxHeight, "px");
+        }
+        if (typeof params.leading !== "undefined") {
+            textItem.autoLeading = false;
+            textItem.leading = params.leading;
+        }
+        if (typeof params.autoLeading !== "undefined") {
+            textItem.autoLeading = params.autoLeading ? true : false;
+        }
+
+        return { id: layer.id, name: layer.name, kind: "text" };
+    }
+
     function addEmptyLayer(doc, params) {
         var layer = doc.artLayers.add();
         if (params && params.name) {
@@ -1551,6 +1615,8 @@
             response.data = addTextLayer(app.activeDocument, request.params);
         } else if (command === "add_paragraph_text_layer") {
             response.data = addParagraphTextLayer(app.activeDocument, request.params);
+        } else if (command === "update_text_layer") {
+            response.data = updateTextLayer(app.activeDocument, request.params);
         } else if (command === "add_empty_layer") {
             response.data = addEmptyLayer(app.activeDocument, request.params);
         } else if (command === "merge_active_down") {
