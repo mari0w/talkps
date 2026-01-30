@@ -32,6 +32,13 @@
         return s.replace(/^\s+|\s+$/g, "");
     }
 
+    function normalizeTextContent(value) {
+        if (value === null || typeof value === "undefined") {
+            return value;
+        }
+        return String(value).replace(/\r\n/g, "\r").replace(/\n/g, "\r");
+    }
+
     function isWhitespace(ch) {
         return ch === " " || ch === "\\n" || ch === "\\r" || ch === "\\t";
     }
@@ -79,14 +86,27 @@
         if (s === "") {
             return { command: null, params: {} };
         }
-        if (s.charAt(0) === "{" && typeof JSON !== "undefined" && JSON.parse) {
+        if (s.charAt(0) === "{") {
+            if (typeof JSON !== "undefined" && JSON.parse) {
+                try {
+                    var parsed = JSON.parse(s);
+                    return {
+                        command: parsed.command || null,
+                        params: parsed.params || {}
+                    };
+                } catch (err) {
+                    // Fall back to eval parsing below.
+                }
+            }
             try {
-                var parsed = JSON.parse(s);
-                return {
-                    command: parsed.command || null,
-                    params: parsed.params || {}
-                };
-            } catch (err) {
+                var evaluated = eval("(" + s + ")");
+                if (evaluated && typeof evaluated === "object") {
+                    return {
+                        command: evaluated.command || null,
+                        params: evaluated.params || {}
+                    };
+                }
+            } catch (err2) {
                 // Fall back to string parsing below.
             }
         }
@@ -308,6 +328,26 @@
         throw new Error("Unsupported anchor position: " + value);
     }
 
+    function mapJustification(value) {
+        var key = normalizeEnumKey(value);
+        if (!key) {
+            return null;
+        }
+        if (key === "LEFT" || key === "LEFTJUSTIFIED") {
+            return Justification.LEFT;
+        }
+        if (key === "RIGHT" || key === "RIGHTJUSTIFIED") {
+            return Justification.RIGHT;
+        }
+        if (key === "CENTER" || key === "CENTERJUSTIFIED") {
+            return Justification.CENTER;
+        }
+        if (key === "FULL" || key === "JUSTIFY" || key === "FULLYJUSTIFIED") {
+            return Justification.FULLYJUSTIFIED;
+        }
+        throw new Error("Unsupported justification: " + value);
+    }
+
     function mapBitsPerChannel(value) {
         if (!value) {
             return null;
@@ -361,6 +401,24 @@
         return null;
     }
 
+    function findLayerByNameAny(container, name) {
+        var layer = findLayerByName(container, name, false);
+        if (layer) {
+            return layer;
+        }
+        return findLayerByName(container, name, true);
+    }
+
+    function resolveLayerFromParams(doc, params) {
+        if (params && typeof params.layerId !== "undefined") {
+            return findLayerById(doc, params.layerId);
+        }
+        if (params && params.layerName) {
+            return findLayerByNameAny(doc, params.layerName);
+        }
+        return doc.activeLayer;
+    }
+
     function getLayerBoundsPx(layer) {
         return [
             layer.bounds[0].as("px"),
@@ -368,6 +426,29 @@
             layer.bounds[2].as("px"),
             layer.bounds[3].as("px")
         ];
+    }
+
+    function expandBounds(bounds, amount) {
+        if (!amount) {
+            return bounds;
+        }
+        return [
+            bounds[0] - amount,
+            bounds[1] - amount,
+            bounds[2] + amount,
+            bounds[3] + amount
+        ];
+    }
+
+    function boundsIntersection(a, b) {
+        var left = Math.max(a[0], b[0]);
+        var top = Math.max(a[1], b[1]);
+        var right = Math.min(a[2], b[2]);
+        var bottom = Math.min(a[3], b[3]);
+        if (right <= left || bottom <= top) {
+            return null;
+        }
+        return [left, top, right, bottom];
     }
 
     function createSelectionAll(doc) {
@@ -407,6 +488,179 @@
         }
         doc.selection.feather(params.radius);
         return { feather: params.radius };
+    }
+
+    function setForegroundColor(params) {
+        if (!params || !params.color || params.color.length !== 3) {
+            throw new Error("Missing params.color");
+        }
+        var c = new SolidColor();
+        c.rgb.red = params.color[0];
+        c.rgb.green = params.color[1];
+        c.rgb.blue = params.color[2];
+        app.foregroundColor = c;
+        return { color: [c.rgb.red, c.rgb.green, c.rgb.blue] };
+    }
+
+    function mapPointKind(value) {
+        if (!value || typeof value !== "string") {
+            return PointKind.SMOOTHPOINT;
+        }
+        var key = normalizeEnumKey(value);
+        if (key === "CORNER" || key === "CORNERPOINT") {
+            return PointKind.CORNERPOINT;
+        }
+        return PointKind.SMOOTHPOINT;
+    }
+
+    function mapToolType(value) {
+        if (!value || typeof value !== "string") {
+            return ToolType.BRUSH;
+        }
+        var key = normalizeEnumKey(value);
+        if (key === "PENCIL") {
+            return ToolType.PENCIL;
+        }
+        if (key === "ERASER") {
+            return ToolType.ERASER;
+        }
+        return ToolType.BRUSH;
+    }
+
+    function addBezierPath(doc, params) {
+        if (!params || !params.points || params.points.length < 2) {
+            throw new Error("Missing params.points (>=2)");
+        }
+        var name = params.name || "Bezier Path";
+        var subPath = new SubPathInfo();
+        subPath.closed = params.closed ? true : false;
+        subPath.operation = ShapeOperation.SHAPEADD;
+
+        var pointInfos = [];
+        for (var i = 0; i < params.points.length; i++) {
+            var p = params.points[i];
+            if (!p || !p.anchor || p.anchor.length !== 2) {
+                throw new Error("Point missing anchor");
+            }
+            var point = new PathPointInfo();
+            point.kind = mapPointKind(p.kind);
+            point.anchor = [p.anchor[0], p.anchor[1]];
+            var left = p.leftDirection || p.left || p.anchor;
+            var right = p.rightDirection || p.right || p.anchor;
+            point.leftDirection = [left[0], left[1]];
+            point.rightDirection = [right[0], right[1]];
+            pointInfos.push(point);
+        }
+        subPath.entireSubPath = pointInfos;
+
+        var pathItem = doc.pathItems.add(name, [subPath]);
+        return { name: pathItem.name, points: params.points.length, closed: subPath.closed };
+    }
+
+    function resolvePathItem(doc, params) {
+        if (params && params.name) {
+            if (doc.pathItems.getByName) {
+                return doc.pathItems.getByName(params.name);
+            }
+            for (var i = 0; i < doc.pathItems.length; i++) {
+                if (doc.pathItems[i].name === params.name) {
+                    return doc.pathItems[i];
+                }
+            }
+        }
+        if (doc.pathItems.length > 0) {
+            return doc.pathItems[doc.pathItems.length - 1];
+        }
+        return null;
+    }
+
+    function strokePathItem(doc, params) {
+        var pathItem = resolvePathItem(doc, params);
+        if (!pathItem) {
+            throw new Error("Path not found");
+        }
+        var tool = mapToolType(params && params.tool ? params.tool : null);
+        pathItem.strokePath(tool);
+        return { stroked: true, name: pathItem.name };
+    }
+
+    function deletePathItem(doc, params) {
+        var pathItem = resolvePathItem(doc, params);
+        if (!pathItem) {
+            throw new Error("Path not found");
+        }
+        var name = pathItem.name;
+        pathItem.remove();
+        return { deleted: true, name: name };
+    }
+
+    function applyLayerStyleByName(doc, params) {
+        if (!params || !params.styleName) {
+            throw new Error("Missing params.styleName");
+        }
+        doc.activeLayer.applyStyle(params.styleName);
+        return { applied: params.styleName, id: doc.activeLayer.id };
+    }
+
+    function setActiveLayer(doc, params) {
+        var layer = resolveLayerFromParams(doc, params);
+        if (!layer) {
+            throw new Error("Layer not found");
+        }
+        doc.activeLayer = layer;
+        return { id: layer.id, name: layer.name };
+    }
+
+    function getLayerBounds(doc, params) {
+        var layer = resolveLayerFromParams(doc, params);
+        if (!layer) {
+            throw new Error("Layer not found");
+        }
+        return { id: layer.id, name: layer.name, bounds: getLayerBoundsPx(layer) };
+    }
+
+    function checkLayerOverlap(doc, params) {
+        if (!params || (!params.layerIds && !params.layerNames)) {
+            throw new Error("Missing params.layerIds or params.layerNames");
+        }
+        var layers = [];
+        if (params.layerIds && params.layerIds.length) {
+            for (var i = 0; i < params.layerIds.length; i++) {
+                var byId = findLayerById(doc, params.layerIds[i]);
+                if (byId) {
+                    layers.push(byId);
+                }
+            }
+        }
+        if (params.layerNames && params.layerNames.length) {
+            for (var j = 0; j < params.layerNames.length; j++) {
+                var byName = findLayerByNameAny(doc, params.layerNames[j]);
+                if (byName) {
+                    layers.push(byName);
+                }
+            }
+        }
+        if (layers.length < 2) {
+            throw new Error("Need at least two layers to check overlap");
+        }
+        var padding = params.padding || 0;
+        var overlaps = [];
+        for (var a = 0; a < layers.length; a++) {
+            for (var b = a + 1; b < layers.length; b++) {
+                var boundsA = expandBounds(getLayerBoundsPx(layers[a]), padding);
+                var boundsB = expandBounds(getLayerBoundsPx(layers[b]), padding);
+                var intersection = boundsIntersection(boundsA, boundsB);
+                if (intersection) {
+                    overlaps.push({
+                        a: { id: layers[a].id, name: layers[a].name, bounds: boundsA },
+                        b: { id: layers[b].id, name: layers[b].name, bounds: boundsB },
+                        intersection: intersection,
+                        area: (intersection[2] - intersection[0]) * (intersection[3] - intersection[1])
+                    });
+                }
+            }
+        }
+        return { checked: layers.length, overlaps: overlaps };
     }
 
     function createLayerGroup(doc, params) {
@@ -947,6 +1201,24 @@
         throw new Error("Unsupported export format: " + params.format);
     }
 
+    function exportPreview(doc, params) {
+        var path = "/tmp/ps_preview.png";
+        var format = "png";
+        var quality = undefined;
+        if (params) {
+            if (params.path) {
+                path = params.path;
+            }
+            if (params.format) {
+                format = params.format;
+            }
+            if (typeof params.quality !== "undefined") {
+                quality = params.quality;
+            }
+        }
+        return exportActiveDocument(doc, { path: path, format: format, quality: quality });
+    }
+
     function historyUndo() {
         executeAction(cID("undo"), undefined, DialogModes.NO);
         return { undo: true };
@@ -1074,7 +1346,7 @@
         layer.name = params.name || "Text Layer";
 
         var textItem = layer.textItem;
-        textItem.contents = params.text;
+        textItem.contents = normalizeTextContent(params.text);
 
         if (params.font) {
             textItem.font = params.font;
@@ -1085,6 +1357,61 @@
         if (params.position && params.position.length === 2) {
             textItem.position = [params.position[0], params.position[1]];
         }
+        if (params.color && params.color.length === 3) {
+            var textColor = new SolidColor();
+            textColor.rgb.red = params.color[0];
+            textColor.rgb.green = params.color[1];
+            textColor.rgb.blue = params.color[2];
+            textItem.color = textColor;
+        }
+
+        return {
+            name: layer.name,
+            id: layer.id
+        };
+    }
+
+    function addParagraphTextLayer(doc, params) {
+        if (!params || !params.text) {
+            throw new Error("Missing params.text");
+        }
+        if (typeof params.boxWidth === "undefined" || typeof params.boxHeight === "undefined") {
+            throw new Error("Missing params.boxWidth or params.boxHeight");
+        }
+
+        var layer = doc.artLayers.add();
+        layer.kind = LayerKind.TEXT;
+        layer.name = params.name || "Paragraph Text";
+
+        var textItem = layer.textItem;
+        textItem.kind = TextType.PARAGRAPHTEXT;
+        textItem.contents = normalizeTextContent(params.text);
+
+        if (params.font) {
+            textItem.font = params.font;
+        }
+        if (params.size) {
+            textItem.size = params.size;
+        }
+        if (params.leading || params.leading === 0) {
+            textItem.autoLeading = false;
+            textItem.leading = params.leading;
+        }
+        if (params.tracking || params.tracking === 0) {
+            textItem.tracking = params.tracking;
+        }
+        if (params.justification) {
+            var justification = mapJustification(params.justification);
+            if (justification) {
+                textItem.justification = justification;
+            }
+        }
+        if (params.position && params.position.length === 2) {
+            textItem.position = [params.position[0], params.position[1]];
+        }
+        textItem.width = toUnitValue(params.boxWidth, "px");
+        textItem.height = toUnitValue(params.boxHeight, "px");
+
         if (params.color && params.color.length === 3) {
             var textColor = new SolidColor();
             textColor.rgb.red = params.color[0];
@@ -1184,7 +1511,8 @@
             ping: true,
             list_fonts: true,
             create_document: true,
-            open_document: true
+            open_document: true,
+            set_foreground_color: true
         };
 
         if (!noDocCommands[command] && app.documents.length == 0) {
@@ -1221,6 +1549,8 @@
             response.data = rotateCanvas(app.activeDocument, request.params);
         } else if (command === "add_text_layer") {
             response.data = addTextLayer(app.activeDocument, request.params);
+        } else if (command === "add_paragraph_text_layer") {
+            response.data = addParagraphTextLayer(app.activeDocument, request.params);
         } else if (command === "add_empty_layer") {
             response.data = addEmptyLayer(app.activeDocument, request.params);
         } else if (command === "merge_active_down") {
@@ -1251,6 +1581,22 @@
             response.data = contractSelection(app.activeDocument, request.params);
         } else if (command === "feather_selection") {
             response.data = featherSelection(app.activeDocument, request.params);
+        } else if (command === "set_foreground_color") {
+            response.data = setForegroundColor(request.params);
+        } else if (command === "add_bezier_path") {
+            response.data = addBezierPath(app.activeDocument, request.params);
+        } else if (command === "stroke_path") {
+            response.data = strokePathItem(app.activeDocument, request.params);
+        } else if (command === "delete_path") {
+            response.data = deletePathItem(app.activeDocument, request.params);
+        } else if (command === "apply_layer_style") {
+            response.data = applyLayerStyleByName(app.activeDocument, request.params);
+        } else if (command === "set_active_layer") {
+            response.data = setActiveLayer(app.activeDocument, request.params);
+        } else if (command === "get_layer_bounds") {
+            response.data = getLayerBounds(app.activeDocument, request.params);
+        } else if (command === "check_layer_overlap") {
+            response.data = checkLayerOverlap(app.activeDocument, request.params);
         } else if (command === "create_layer_group") {
             response.data = createLayerGroup(app.activeDocument, request.params);
         } else if (command === "move_layers_to_group") {
@@ -1303,6 +1649,8 @@
             response.data = placeImageAsLayer(app.activeDocument, request.params);
         } else if (command === "export_document") {
             response.data = exportActiveDocument(app.activeDocument, request.params);
+        } else if (command === "export_preview") {
+            response.data = exportPreview(app.activeDocument, request.params);
         } else if (command === "history_undo") {
             response.data = historyUndo();
         } else if (command === "history_redo") {

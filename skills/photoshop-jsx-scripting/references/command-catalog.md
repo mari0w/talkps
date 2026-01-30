@@ -97,6 +97,21 @@ Use this table to design requests and responses for the JSX bridge.
     - `name` (string, optional)
   - Response: `{ name, id }`
 
+- `add_paragraph_text_layer`
+  - Params:
+    - `text` (string, required)
+    - `boxWidth` (number, required, px)
+    - `boxHeight` (number, required, px)
+    - `position` (array `[x,y]`, optional)
+    - `font` (string, optional, PostScript name)
+    - `size` (number, optional)
+    - `leading` (number, optional)
+    - `tracking` (number, optional)
+    - `justification` (string, optional, `LEFT`, `RIGHT`, `CENTER`, `FULLYJUSTIFIED`)
+    - `color` (array `[r,g,b]`, optional)
+    - `name` (string, optional)
+  - Response: `{ name, id }`
+
 - `merge_active_down`
   - Params: none
   - Response: `{ name, id }`
@@ -161,6 +176,55 @@ Use this table to design requests and responses for the JSX bridge.
   - Params:
     - `radius` (number, required, px)
   - Response: `{ feather }`
+
+## Color & paths
+- `set_foreground_color`
+  - Params:
+    - `color` (array `[r,g,b]`, required)
+  - Response: `{ color }`
+
+- `add_bezier_path`
+  - Params:
+    - `points` (array, required; each point has `anchor` `[x,y]`, optional `left` `[x,y]`, `right` `[x,y]`, `kind`)
+    - `name` (string, optional)
+    - `closed` (boolean, optional)
+  - Response: `{ name, points, closed }`
+
+- `stroke_path`
+  - Params:
+    - `name` (string, optional; uses last path when omitted)
+    - `tool` (string, optional; `BRUSH`, `PENCIL`, `ERASER`)
+  - Response: `{ stroked, name }`
+
+- `delete_path`
+  - Params:
+    - `name` (string, optional; uses last path when omitted)
+  - Response: `{ deleted, name }`
+
+## Layer utilities
+- `set_active_layer`
+  - Params:
+    - `layerId` (number, optional)
+    - `layerName` (string, optional)
+  - Response: `{ id, name }`
+
+- `get_layer_bounds`
+  - Params:
+    - `layerId` (number, optional)
+    - `layerName` (string, optional)
+  - Response: `{ id, name, bounds }`
+
+- `check_layer_overlap`
+  - Params:
+    - `layerIds` (array, optional)
+    - `layerNames` (array, optional)
+    - `padding` (number, optional, px)
+  - Response: `{ checked, overlaps }`
+
+- `apply_layer_style`
+  - Params:
+    - `styleName` (string, required)
+  - Response: `{ applied, id }`
 
 ## Groups
 - `create_layer_group`
@@ -324,6 +388,13 @@ Use this table to design requests and responses for the JSX bridge.
   - Params:
     - `path` (string, required)
     - `format` (string, required, `png`, `jpg`, `webp`)
+    - `quality` (number, optional)
+  - Response: `{ exported, path, format }`
+
+- `export_preview`
+  - Params:
+    - `path` (string, optional, default `/tmp/ps_preview.png`)
+    - `format` (string, optional, default `png`)
     - `quality` (number, optional)
   - Response: `{ exported, path, format }`
 
