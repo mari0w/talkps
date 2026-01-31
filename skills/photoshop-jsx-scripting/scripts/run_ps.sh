@@ -13,12 +13,34 @@ if [[ ! -f "$jsx_path" ]]; then
   exit 1
 fi
 
-osascript - "$jsx_path" <<'APPLESCRIPT'
+args=("$jsx_path")
+if [[ -n "${PS_REQUEST_FILE:-}" ]]; then
+  args+=("$PS_REQUEST_FILE")
+fi
+if [[ -n "${PS_RESPONSE_FILE:-}" ]]; then
+  args+=("$PS_RESPONSE_FILE")
+fi
+
+osascript - "${args[@]}" <<'APPLESCRIPT'
 on run argv
   set jsxPath to POSIX file (item 1 of argv)
-  tell application id "com.adobe.Photoshop"
-    do javascript file jsxPath
-  end tell
+  set argCount to (count of argv)
+  if argCount >= 3 then
+    set reqPath to item 2 of argv
+    set resPath to item 3 of argv
+    tell application id "com.adobe.Photoshop"
+      do javascript file jsxPath with arguments {reqPath, resPath}
+    end tell
+  else if argCount = 2 then
+    set reqPath to item 2 of argv
+    tell application id "com.adobe.Photoshop"
+      do javascript file jsxPath with arguments {reqPath}
+    end tell
+  else
+    tell application id "com.adobe.Photoshop"
+      do javascript file jsxPath
+    end tell
+  end if
   return ""
 end run
 APPLESCRIPT

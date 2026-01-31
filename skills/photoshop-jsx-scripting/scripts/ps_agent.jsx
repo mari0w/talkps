@@ -1,10 +1,26 @@
 #target photoshop
 
-(function () {
+var __psAgentArgs = (typeof arguments !== "undefined") ? arguments : [];
+
+(function (psArgs) {
     var scriptFile = new File($.fileName);
     var baseDir = scriptFile.parent;
-    var requestPath = baseDir.fsName + "/ps_request.json";
-    var responsePath = baseDir.fsName + "/ps_response.json";
+    var argRequestPath = null;
+    var argResponsePath = null;
+    try {
+        if (psArgs && psArgs.length) {
+            if (psArgs.length >= 1 && psArgs[0]) {
+                argRequestPath = String(psArgs[0]);
+            }
+            if (psArgs.length >= 2 && psArgs[1]) {
+                argResponsePath = String(psArgs[1]);
+            }
+        }
+    } catch (e) {
+    }
+
+    var requestPath = argRequestPath || $.getenv("PS_REQUEST_FILE") || (baseDir.fsName + "/ps_request.json");
+    var responsePath = argResponsePath || $.getenv("PS_RESPONSE_FILE") || (baseDir.fsName + "/ps_response.json");
 
     function readFile(path) {
         var f = new File(path);
@@ -2773,4 +2789,4 @@
     } catch (writeErr) {
         alert("Failed to write response: " + writeErr);
     }
-})();
+})(__psAgentArgs);

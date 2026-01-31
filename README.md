@@ -105,7 +105,7 @@ PS_LLM_CMD="codex exec" ./skills/photoshop-jsx-scripting/scripts/ps_nl.sh "list 
 
 ### Config overrides
 
-By default the scripts now use temporary files in `/tmp` for `ps_request`/`ps_response` (to avoid collisions). If you need fixed paths (for example, when the files live in a synced folder), set:
+By default the scripts read/write `skills/photoshop-jsx-scripting/scripts/ps_request.json` and `skills/photoshop-jsx-scripting/scripts/ps_response.json`. If you need custom paths (for example, to run concurrently or avoid overwriting files), set:
 
 - `PS_REQUEST_FILE`
 - `PS_RESPONSE_FILE`

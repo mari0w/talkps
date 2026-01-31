@@ -105,7 +105,7 @@ PS_LLM_CMD="codex exec" ./skills/photoshop-jsx-scripting/scripts/ps_nl.sh "列�
 
 ### 配置覆盖
 
-默认情况下脚本改为使用 `/tmp` 下的临时文件来读写 `ps_request/ps_response`（避免并发冲突）。如需固定路径，可设置：
+默认情况下脚本使用 `skills/photoshop-jsx-scripting/scripts/ps_request.json` 与 `skills/photoshop-jsx-scripting/scripts/ps_response.json` 进行读写。若需自定义路径（例如并发运行或避免覆盖），可设置：
 
 - `PS_REQUEST_FILE`
 - `PS_RESPONSE_FILE`
