@@ -56,6 +56,10 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 ./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"rotate_canvas","params":{"angle":90}}'
 ./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"save_active_document_as","params":{"path":"/tmp/hero.psd","format":"psd"}}'
 ./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"delete_active_layer"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"create_layers_bulk","params":{"layers":[{"name":"BG","kind":"empty"},{"name":"Title","kind":"text","text":"Hello","font":"ArialMT","size":48,"color":[255,255,255],"position":[120,140]}]}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"set_text_bulk","params":{"items":[{"layerName":"Title","text":"Updated title","size":56},{"layerName":"Subtitle","text":"Second line","size":28,"leading":34}]}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh "{\"command\":\"apply_layer_styles_bulk\",\"params\":{\"styles\":[{\"layerName\":\"Title\",\"style\":{\"dropShadow\":{\"opacity\":50,\"distance\":10,\"size\":14,\"angle\":120,\"color\":[0,0,0]}}}]}}"
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh "{\"command\":\"batch_commands\",\"params\":{\"continueOnError\":true,\"commands\":[{\"command\":\"add_empty_layer\",\"params\":{\"name\":\"Base\"}},{\"command\":\"add_text_layer\",\"params\":{\"name\":\"Title\",\"text\":\"Batch title\",\"font\":\"ArialMT\",\"size\":48,\"color\":[20,20,20],\"position\":[120,140]}},{\"command\":\"set_layer_style\",\"params\":{\"layerName\":\"Title\",\"dropShadow\":{\"opacity\":50,\"distance\":10,\"size\":14,\"angle\":120,\"color\":[0,0,0]}}}]}}"
 ```
 
 示例命令含义：
@@ -78,6 +82,10 @@ ps_call.sh -> run_ps.sh -> Photoshop -> ps_agent.jsx -> ps_response.json
 - `rotate_canvas`：按角度旋转画布。
 - `save_active_document_as`：保存到指定路径/格式。
 - `delete_active_layer`：删除当前图层。
+- `create_layers_bulk`：批量创建空白/文字图层。
+- `set_text_bulk`：批量更新文字图层内容与样式。
+- `apply_layer_styles_bulk`：批量应用图层样式。
+- `batch_commands`：顺序执行多个命令并汇总结果。
 
 ## 自然语言入口 / Natural Language Entry
 
@@ -159,6 +167,12 @@ Photoshop 技能包位于 `skills/photoshop-jsx-scripting`，包含：
 - `set_active_layer_opacity`（设置当前图层不透明度）
 - `set_active_layer_blend_mode`（设置当前图层混合模式）
 - `set_layer_style`（设置图层样式：阴影、发光、描边、叠加等）
+
+**批处理与批量操作**
+- `batch_commands`（顺序执行多个命令并汇总结果）
+- `create_layers_bulk`（批量创建空白/文字图层）
+- `set_text_bulk`（批量更新文字图层）
+- `apply_layer_styles_bulk`（批量应用图层样式）
 
 **选择与选区**
 - `select_all`（全选）

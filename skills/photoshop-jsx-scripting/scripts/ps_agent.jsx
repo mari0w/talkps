@@ -2371,6 +2371,380 @@
         return { blendMode: doc.activeLayer.blendMode.toString(), id: doc.activeLayer.id };
     }
 
+    function executeCommand(command, params) {
+        var noDocCommands = {
+            ping: true,
+            list_fonts: true,
+            create_document: true,
+            open_document: true,
+            set_foreground_color: true,
+            batch_commands: true
+        };
+
+        if (!noDocCommands[command] && app.documents.length == 0) {
+            throw new Error("No document open");
+        }
+
+        if (command === "ping") {
+            return { status: "ok", message: "pong" };
+        }
+        if (command === "create_document") {
+            return createDocument(params);
+        }
+        if (command === "open_document") {
+            return openDocument(params);
+        }
+        if (command === "get_document_info") {
+            return getDocumentInfo(app.activeDocument);
+        }
+        if (command === "list_layers") {
+            return listLayers(app.activeDocument);
+        }
+        if (command === "list_fonts") {
+            return listFonts();
+        }
+        if (command === "save_active_document") {
+            return saveActiveDocument(app.activeDocument);
+        }
+        if (command === "save_active_document_as") {
+            return saveActiveDocumentAs(app.activeDocument, params);
+        }
+        if (command === "close_active_document") {
+            return closeActiveDocument(app.activeDocument, params);
+        }
+        if (command === "duplicate_active_document") {
+            return duplicateActiveDocument(app.activeDocument, params);
+        }
+        if (command === "flatten_active_document") {
+            return flattenActiveDocument(app.activeDocument);
+        }
+        if (command === "resize_image") {
+            return resizeImage(app.activeDocument, params);
+        }
+        if (command === "resize_canvas") {
+            return resizeCanvas(app.activeDocument, params);
+        }
+        if (command === "rotate_canvas") {
+            return rotateCanvas(app.activeDocument, params);
+        }
+        if (command === "add_text_layer") {
+            return addTextLayer(app.activeDocument, params);
+        }
+        if (command === "add_text_layer_auto") {
+            return addTextLayerAuto(app.activeDocument, params);
+        }
+        if (command === "add_paragraph_text_layer") {
+            return addParagraphTextLayer(app.activeDocument, params);
+        }
+        if (command === "update_text_layer") {
+            return updateTextLayer(app.activeDocument, params);
+        }
+        if (command === "measure_text_bounds") {
+            return measureTextBounds(app.activeDocument, params);
+        }
+        if (command === "fit_text_to_box") {
+            return fitTextToBox(app.activeDocument, params);
+        }
+        if (command === "add_empty_layer") {
+            return addEmptyLayer(app.activeDocument, params);
+        }
+        if (command === "merge_active_down") {
+            return mergeActiveDown(app.activeDocument);
+        }
+        if (command === "merge_visible_layers") {
+            return mergeVisible(app.activeDocument);
+        }
+        if (command === "duplicate_active_layer") {
+            return duplicateActiveLayer(app.activeDocument, params);
+        }
+        if (command === "delete_active_layer") {
+            return deleteActiveLayer(app.activeDocument);
+        }
+        if (command === "rename_active_layer") {
+            return renameActiveLayer(app.activeDocument, params);
+        }
+        if (command === "set_active_layer_visibility") {
+            return setActiveLayerVisibility(app.activeDocument, params);
+        }
+        if (command === "set_active_layer_opacity") {
+            return setActiveLayerOpacity(app.activeDocument, params);
+        }
+        if (command === "set_active_layer_blend_mode") {
+            return setActiveLayerBlendMode(app.activeDocument, params);
+        }
+        if (command === "select_all") {
+            return createSelectionAll(app.activeDocument);
+        }
+        if (command === "deselect") {
+            return deselectSelection(app.activeDocument);
+        }
+        if (command === "invert_selection") {
+            return invertSelection(app.activeDocument);
+        }
+        if (command === "expand_selection") {
+            return expandSelection(app.activeDocument, params);
+        }
+        if (command === "contract_selection") {
+            return contractSelection(app.activeDocument, params);
+        }
+        if (command === "feather_selection") {
+            return featherSelection(app.activeDocument, params);
+        }
+        if (command === "set_foreground_color") {
+            return setForegroundColor(params);
+        }
+        if (command === "add_bezier_path") {
+            return addBezierPath(app.activeDocument, params);
+        }
+        if (command === "stroke_path") {
+            return strokePathItem(app.activeDocument, params);
+        }
+        if (command === "delete_path") {
+            return deletePathItem(app.activeDocument, params);
+        }
+        if (command === "apply_layer_style") {
+            return applyLayerStyleByName(app.activeDocument, params);
+        }
+        if (command === "set_layer_style") {
+            return setLayerStyle(app.activeDocument, params);
+        }
+        if (command === "set_active_layer") {
+            return setActiveLayer(app.activeDocument, params);
+        }
+        if (command === "get_layer_bounds") {
+            return getLayerBounds(app.activeDocument, params);
+        }
+        if (command === "check_layer_overlap") {
+            return checkLayerOverlap(app.activeDocument, params);
+        }
+        if (command === "create_layer_group") {
+            return createLayerGroup(app.activeDocument, params);
+        }
+        if (command === "move_layers_to_group") {
+            return moveLayersIntoGroup(app.activeDocument, params);
+        }
+        if (command === "ungroup_layer_group") {
+            return ungroupLayerGroup(app.activeDocument, params);
+        }
+        if (command === "add_levels_adjustment_layer") {
+            return addLevelsAdjustmentLayer(app.activeDocument, params);
+        }
+        if (command === "add_curves_adjustment_layer") {
+            return addCurvesAdjustmentLayer(app.activeDocument, params);
+        }
+        if (command === "add_hue_saturation_adjustment_layer") {
+            return addHueSaturationAdjustmentLayer(app.activeDocument, params);
+        }
+        if (command === "add_black_white_adjustment_layer") {
+            return addBlackWhiteAdjustmentLayer(app.activeDocument, params);
+        }
+        if (command === "add_solid_fill_layer") {
+            return addSolidFillLayer(app.activeDocument, params);
+        }
+        if (command === "add_gradient_fill_layer") {
+            return addGradientFillLayer(app.activeDocument, params);
+        }
+        if (command === "add_pattern_fill_layer") {
+            return addPatternFillLayer(app.activeDocument, params);
+        }
+        if (command === "create_layer_mask") {
+            return createLayerMask(app.activeDocument, params);
+        }
+        if (command === "apply_layer_mask") {
+            return applyLayerMask(app.activeDocument);
+        }
+        if (command === "delete_layer_mask") {
+            return deleteLayerMask(app.activeDocument, params);
+        }
+        if (command === "invert_layer_mask") {
+            return invertLayerMask(app.activeDocument);
+        }
+        if (command === "set_clipping_mask") {
+            return setClippingMask(app.activeDocument, params);
+        }
+        if (command === "create_clipping_mask") {
+            return setClippingMask(app.activeDocument, { enabled: true });
+        }
+        if (command === "release_clipping_mask") {
+            return setClippingMask(app.activeDocument, { enabled: false });
+        }
+        if (command === "add_shape_rect") {
+            return addShapeLayerRect(app.activeDocument, params);
+        }
+        if (command === "add_shape_ellipse") {
+            return addShapeLayerEllipse(app.activeDocument, params);
+        }
+        if (command === "transform_active_layer") {
+            return transformActiveLayer(app.activeDocument, params);
+        }
+        if (command === "flip_active_layer_horizontal") {
+            return flipActiveLayer(app.activeDocument, "horizontal");
+        }
+        if (command === "flip_active_layer_vertical") {
+            return flipActiveLayer(app.activeDocument, "vertical");
+        }
+        if (command === "align_layers") {
+            return alignLayers(app.activeDocument, params);
+        }
+        if (command === "distribute_layers") {
+            return distributeLayers(app.activeDocument, params);
+        }
+        if (command === "place_image_as_layer") {
+            return placeImageAsLayer(app.activeDocument, params);
+        }
+        if (command === "export_document") {
+            return exportActiveDocument(app.activeDocument, params);
+        }
+        if (command === "export_preview") {
+            return exportPreview(app.activeDocument, params);
+        }
+        if (command === "history_undo") {
+            return historyUndo();
+        }
+        if (command === "history_redo") {
+            return historyRedo();
+        }
+        if (command === "create_layers_bulk") {
+            return createLayersBulk(app.activeDocument, params);
+        }
+        if (command === "apply_layer_styles_bulk") {
+            return applyLayerStylesBulk(app.activeDocument, params);
+        }
+        if (command === "set_text_bulk") {
+            return setTextBulk(app.activeDocument, params);
+        }
+
+        throw new Error("Unknown command: " + command);
+    }
+
+    function batchCommands(params) {
+        if (!params || !isArray(params.commands)) {
+            throw new Error("Missing params.commands");
+        }
+        var continueOnError = params.continueOnError ? true : false;
+        var results = [];
+        var okCount = 0;
+        var errorCount = 0;
+        for (var i = 0; i < params.commands.length; i++) {
+            var item = params.commands[i] || {};
+            var cmd = item.command || null;
+            var res = { command: cmd, ok: false };
+            if (!cmd) {
+                res.error = "Missing command";
+                results.push(res);
+                errorCount++;
+                if (!continueOnError) {
+                    break;
+                }
+                continue;
+            }
+            try {
+                res.result = executeCommand(cmd, item.params || {});
+                res.ok = true;
+                okCount++;
+            } catch (err) {
+                res.error = err.toString();
+                errorCount++;
+            }
+            results.push(res);
+            if (!res.ok && !continueOnError) {
+                break;
+            }
+        }
+        return { okCount: okCount, errorCount: errorCount, results: results };
+    }
+
+    function createLayersBulk(doc, params) {
+        if (!params || !isArray(params.layers)) {
+            throw new Error("Missing params.layers");
+        }
+        var results = [];
+        var okCount = 0;
+        var errorCount = 0;
+        for (var i = 0; i < params.layers.length; i++) {
+            var item = params.layers[i] || {};
+            var kind = item.kind ? String(item.kind).toLowerCase() : "empty";
+            var res = { index: i, ok: false, kind: kind };
+            try {
+                if (kind === "text") {
+                    res.result = addTextLayer(doc, item);
+                } else if (kind === "empty" || kind === "") {
+                    res.result = addEmptyLayer(doc, item);
+                } else {
+                    throw new Error("Unsupported layer kind: " + item.kind);
+                }
+                res.ok = true;
+                okCount++;
+            } catch (err) {
+                res.error = err.toString();
+                errorCount++;
+            }
+            results.push(res);
+        }
+        return { okCount: okCount, errorCount: errorCount, results: results };
+    }
+
+    function applyLayerStylesBulk(doc, params) {
+        if (!params || !isArray(params.styles)) {
+            throw new Error("Missing params.styles");
+        }
+        var results = [];
+        var okCount = 0;
+        var errorCount = 0;
+        for (var i = 0; i < params.styles.length; i++) {
+            var item = params.styles[i] || {};
+            var res = { index: i, ok: false };
+            try {
+                if (!item.style) {
+                    throw new Error("Missing style");
+                }
+                var payload = {};
+                if (typeof item.layerId !== "undefined") {
+                    payload.layerId = item.layerId;
+                }
+                if (item.layerName) {
+                    payload.layerName = item.layerName;
+                }
+                for (var key in item.style) {
+                    if (item.style.hasOwnProperty(key)) {
+                        payload[key] = item.style[key];
+                    }
+                }
+                res.result = setLayerStyle(doc, payload);
+                res.ok = true;
+                okCount++;
+            } catch (err) {
+                res.error = err.toString();
+                errorCount++;
+            }
+            results.push(res);
+        }
+        return { okCount: okCount, errorCount: errorCount, results: results };
+    }
+
+    function setTextBulk(doc, params) {
+        if (!params || !isArray(params.items)) {
+            throw new Error("Missing params.items");
+        }
+        var results = [];
+        var okCount = 0;
+        var errorCount = 0;
+        for (var i = 0; i < params.items.length; i++) {
+            var item = params.items[i] || {};
+            var res = { index: i, ok: false };
+            try {
+                res.result = updateTextLayer(doc, item);
+                res.ok = true;
+                okCount++;
+            } catch (err) {
+                res.error = err.toString();
+                errorCount++;
+            }
+            results.push(res);
+        }
+        return { okCount: okCount, errorCount: errorCount, results: results };
+    }
+
     var response = { ok: false, data: null, error: null };
 
     try {
@@ -2382,166 +2756,10 @@
             throw new Error("Missing command");
         }
 
-        var noDocCommands = {
-            ping: true,
-            list_fonts: true,
-            create_document: true,
-            open_document: true,
-            set_foreground_color: true
-        };
-
-        if (!noDocCommands[command] && app.documents.length == 0) {
-            throw new Error("No document open");
-        }
-
-        if (command === "ping") {
-            response.data = { status: "ok", message: "pong" };
-        } else if (command === "create_document") {
-            response.data = createDocument(request.params);
-        } else if (command === "open_document") {
-            response.data = openDocument(request.params);
-        } else if (command === "get_document_info") {
-            response.data = getDocumentInfo(app.activeDocument);
-        } else if (command === "list_layers") {
-            response.data = listLayers(app.activeDocument);
-        } else if (command === "list_fonts") {
-            response.data = listFonts();
-        } else if (command === "save_active_document") {
-            response.data = saveActiveDocument(app.activeDocument);
-        } else if (command === "save_active_document_as") {
-            response.data = saveActiveDocumentAs(app.activeDocument, request.params);
-        } else if (command === "close_active_document") {
-            response.data = closeActiveDocument(app.activeDocument, request.params);
-        } else if (command === "duplicate_active_document") {
-            response.data = duplicateActiveDocument(app.activeDocument, request.params);
-        } else if (command === "flatten_active_document") {
-            response.data = flattenActiveDocument(app.activeDocument);
-        } else if (command === "resize_image") {
-            response.data = resizeImage(app.activeDocument, request.params);
-        } else if (command === "resize_canvas") {
-            response.data = resizeCanvas(app.activeDocument, request.params);
-        } else if (command === "rotate_canvas") {
-            response.data = rotateCanvas(app.activeDocument, request.params);
-        } else if (command === "add_text_layer") {
-            response.data = addTextLayer(app.activeDocument, request.params);
-        } else if (command === "add_text_layer_auto") {
-            response.data = addTextLayerAuto(app.activeDocument, request.params);
-        } else if (command === "add_paragraph_text_layer") {
-            response.data = addParagraphTextLayer(app.activeDocument, request.params);
-        } else if (command === "update_text_layer") {
-            response.data = updateTextLayer(app.activeDocument, request.params);
-        } else if (command === "measure_text_bounds") {
-            response.data = measureTextBounds(app.activeDocument, request.params);
-        } else if (command === "fit_text_to_box") {
-            response.data = fitTextToBox(app.activeDocument, request.params);
-        } else if (command === "add_empty_layer") {
-            response.data = addEmptyLayer(app.activeDocument, request.params);
-        } else if (command === "merge_active_down") {
-            response.data = mergeActiveDown(app.activeDocument);
-        } else if (command === "merge_visible_layers") {
-            response.data = mergeVisible(app.activeDocument);
-        } else if (command === "duplicate_active_layer") {
-            response.data = duplicateActiveLayer(app.activeDocument, request.params);
-        } else if (command === "delete_active_layer") {
-            response.data = deleteActiveLayer(app.activeDocument);
-        } else if (command === "rename_active_layer") {
-            response.data = renameActiveLayer(app.activeDocument, request.params);
-        } else if (command === "set_active_layer_visibility") {
-            response.data = setActiveLayerVisibility(app.activeDocument, request.params);
-        } else if (command === "set_active_layer_opacity") {
-            response.data = setActiveLayerOpacity(app.activeDocument, request.params);
-        } else if (command === "set_active_layer_blend_mode") {
-            response.data = setActiveLayerBlendMode(app.activeDocument, request.params);
-        } else if (command === "select_all") {
-            response.data = createSelectionAll(app.activeDocument);
-        } else if (command === "deselect") {
-            response.data = deselectSelection(app.activeDocument);
-        } else if (command === "invert_selection") {
-            response.data = invertSelection(app.activeDocument);
-        } else if (command === "expand_selection") {
-            response.data = expandSelection(app.activeDocument, request.params);
-        } else if (command === "contract_selection") {
-            response.data = contractSelection(app.activeDocument, request.params);
-        } else if (command === "feather_selection") {
-            response.data = featherSelection(app.activeDocument, request.params);
-        } else if (command === "set_foreground_color") {
-            response.data = setForegroundColor(request.params);
-        } else if (command === "add_bezier_path") {
-            response.data = addBezierPath(app.activeDocument, request.params);
-        } else if (command === "stroke_path") {
-            response.data = strokePathItem(app.activeDocument, request.params);
-        } else if (command === "delete_path") {
-            response.data = deletePathItem(app.activeDocument, request.params);
-        } else if (command === "apply_layer_style") {
-            response.data = applyLayerStyleByName(app.activeDocument, request.params);
-        } else if (command === "set_layer_style") {
-            response.data = setLayerStyle(app.activeDocument, request.params);
-        } else if (command === "set_active_layer") {
-            response.data = setActiveLayer(app.activeDocument, request.params);
-        } else if (command === "get_layer_bounds") {
-            response.data = getLayerBounds(app.activeDocument, request.params);
-        } else if (command === "check_layer_overlap") {
-            response.data = checkLayerOverlap(app.activeDocument, request.params);
-        } else if (command === "create_layer_group") {
-            response.data = createLayerGroup(app.activeDocument, request.params);
-        } else if (command === "move_layers_to_group") {
-            response.data = moveLayersIntoGroup(app.activeDocument, request.params);
-        } else if (command === "ungroup_layer_group") {
-            response.data = ungroupLayerGroup(app.activeDocument, request.params);
-        } else if (command === "add_levels_adjustment_layer") {
-            response.data = addLevelsAdjustmentLayer(app.activeDocument, request.params);
-        } else if (command === "add_curves_adjustment_layer") {
-            response.data = addCurvesAdjustmentLayer(app.activeDocument, request.params);
-        } else if (command === "add_hue_saturation_adjustment_layer") {
-            response.data = addHueSaturationAdjustmentLayer(app.activeDocument, request.params);
-        } else if (command === "add_black_white_adjustment_layer") {
-            response.data = addBlackWhiteAdjustmentLayer(app.activeDocument, request.params);
-        } else if (command === "add_solid_fill_layer") {
-            response.data = addSolidFillLayer(app.activeDocument, request.params);
-        } else if (command === "add_gradient_fill_layer") {
-            response.data = addGradientFillLayer(app.activeDocument, request.params);
-        } else if (command === "add_pattern_fill_layer") {
-            response.data = addPatternFillLayer(app.activeDocument, request.params);
-        } else if (command === "create_layer_mask") {
-            response.data = createLayerMask(app.activeDocument, request.params);
-        } else if (command === "apply_layer_mask") {
-            response.data = applyLayerMask(app.activeDocument);
-        } else if (command === "delete_layer_mask") {
-            response.data = deleteLayerMask(app.activeDocument, request.params);
-        } else if (command === "invert_layer_mask") {
-            response.data = invertLayerMask(app.activeDocument);
-        } else if (command === "set_clipping_mask") {
-            response.data = setClippingMask(app.activeDocument, request.params);
-        } else if (command === "create_clipping_mask") {
-            response.data = setClippingMask(app.activeDocument, { enabled: true });
-        } else if (command === "release_clipping_mask") {
-            response.data = setClippingMask(app.activeDocument, { enabled: false });
-        } else if (command === "add_shape_rect") {
-            response.data = addShapeLayerRect(app.activeDocument, request.params);
-        } else if (command === "add_shape_ellipse") {
-            response.data = addShapeLayerEllipse(app.activeDocument, request.params);
-        } else if (command === "transform_active_layer") {
-            response.data = transformActiveLayer(app.activeDocument, request.params);
-        } else if (command === "flip_active_layer_horizontal") {
-            response.data = flipActiveLayer(app.activeDocument, "horizontal");
-        } else if (command === "flip_active_layer_vertical") {
-            response.data = flipActiveLayer(app.activeDocument, "vertical");
-        } else if (command === "align_layers") {
-            response.data = alignLayers(app.activeDocument, request.params);
-        } else if (command === "distribute_layers") {
-            response.data = distributeLayers(app.activeDocument, request.params);
-        } else if (command === "place_image_as_layer") {
-            response.data = placeImageAsLayer(app.activeDocument, request.params);
-        } else if (command === "export_document") {
-            response.data = exportActiveDocument(app.activeDocument, request.params);
-        } else if (command === "export_preview") {
-            response.data = exportPreview(app.activeDocument, request.params);
-        } else if (command === "history_undo") {
-            response.data = historyUndo();
-        } else if (command === "history_redo") {
-            response.data = historyRedo();
+        if (command === "batch_commands") {
+            response.data = batchCommands(request.params);
         } else {
-            throw new Error("Unknown command: " + command);
+            response.data = executeCommand(command, request.params);
         }
 
         response.ok = true;

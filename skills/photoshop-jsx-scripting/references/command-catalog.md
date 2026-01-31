@@ -34,6 +34,45 @@ Use this table to design requests and responses for the JSX bridge.
   - Params: none
   - Response: array of `{ name, family, style, postScriptName }`
 
+## Batch & bulk
+- `batch_commands`
+  - Params:
+    - `commands` (array, required; each item `{ command, params }`)
+    - `continueOnError` (boolean, optional, default false)
+  - Response: `{ okCount, errorCount, results }`
+  - Result item shape: `{ command, ok, result?, error? }`
+  - Example:
+    ```json
+    {"command":"batch_commands","params":{"continueOnError":true,"commands":[{"command":"add_empty_layer","params":{"name":"Base"}},{"command":"add_text_layer","params":{"name":"Title","text":"Hello","font":"ArialMT","size":48,"color":[20,20,20],"position":[120,140]}},{"command":"set_layer_style","params":{"layerName":"Title","dropShadow":{"opacity":50,"distance":10,"size":14,"angle":120,"color":[0,0,0]}}}]}}
+    ```
+
+- `create_layers_bulk`
+  - Params:
+    - `layers` (array, required; each `{ name?, kind? ("empty"|"text"), text?, font?, size?, color?, position? }`)
+  - Response: `{ okCount, errorCount, results }`
+  - Example:
+    ```json
+    {"command":"create_layers_bulk","params":{"layers":[{"name":"BG","kind":"empty"},{"name":"Headline","kind":"text","text":"Hello","font":"ArialMT","size":48,"color":[255,255,255],"position":[120,140]}]}}
+    ```
+
+- `apply_layer_styles_bulk`
+  - Params:
+    - `styles` (array, required; each `{ layerId?, layerName?, style: { ...same as set_layer_style... } }`)
+  - Response: `{ okCount, errorCount, results }`
+  - Example:
+    ```json
+    {"command":"apply_layer_styles_bulk","params":{"styles":[{"layerName":"Headline","style":{"dropShadow":{"opacity":60,"distance":12,"size":16,"angle":120,"color":[0,0,0]}}},{"layerName":"Badge","style":{"stroke":{"size":4,"position":"OUTSIDE","color":[255,255,255]}}}]}}
+    ```
+
+- `set_text_bulk`
+  - Params:
+    - `items` (array, required; each `{ layerId?, layerName?, text?, font?, size?, color?, position?, tracking?, leading?, justification? }`)
+  - Response: `{ okCount, errorCount, results }`
+  - Example:
+    ```json
+    {"command":"set_text_bulk","params":{"items":[{"layerName":"Headline","text":"New title","size":64},{"layerName":"Subhead","text":"Updated copy","size":28,"leading":34}]}}
+    ```
+
 ## Document commands
 - `save_active_document`
   - Params: none

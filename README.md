@@ -56,6 +56,10 @@ This `ping` command checks that Photoshop can execute the JSX bridge and that th
 ./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"rotate_canvas","params":{"angle":90}}'
 ./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"save_active_document_as","params":{"path":"/tmp/hero.psd","format":"psd"}}'
 ./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"delete_active_layer"}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"create_layers_bulk","params":{"layers":[{"name":"BG","kind":"empty"},{"name":"Title","kind":"text","text":"Hello","font":"ArialMT","size":48,"color":[255,255,255],"position":[120,140]}]}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh '{"command":"set_text_bulk","params":{"items":[{"layerName":"Title","text":"Updated title","size":56},{"layerName":"Subtitle","text":"Second line","size":28,"leading":34}]}}'
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh "{\"command\":\"apply_layer_styles_bulk\",\"params\":{\"styles\":[{\"layerName\":\"Title\",\"style\":{\"dropShadow\":{\"opacity\":50,\"distance\":10,\"size\":14,\"angle\":120,\"color\":[0,0,0]}}}]}}"
+./skills/photoshop-jsx-scripting/scripts/ps_call.sh "{\"command\":\"batch_commands\",\"params\":{\"continueOnError\":true,\"commands\":[{\"command\":\"add_empty_layer\",\"params\":{\"name\":\"Base\"}},{\"command\":\"add_text_layer\",\"params\":{\"name\":\"Title\",\"text\":\"Batch title\",\"font\":\"ArialMT\",\"size\":48,\"color\":[20,20,20],\"position\":[120,140]}},{\"command\":\"set_layer_style\",\"params\":{\"layerName\":\"Title\",\"dropShadow\":{\"opacity\":50,\"distance\":10,\"size\":14,\"angle\":120,\"color\":[0,0,0]}}}]}}"
 ```
 
 Example command meanings:
@@ -78,6 +82,10 @@ Example command meanings:
 - `rotate_canvas`: Rotate the canvas by degrees.
 - `save_active_document_as`: Save the active document to a specific file format.
 - `delete_active_layer`: Delete the active layer.
+- `create_layers_bulk`: Create multiple empty/text layers in sequence.
+- `set_text_bulk`: Update multiple text layers with new content and styling.
+- `apply_layer_styles_bulk`: Apply layer styles to multiple layers.
+- `batch_commands`: Run a list of commands sequentially and collect results.
 
 ## 自然语言入口 / Natural Language Entry
 
@@ -159,6 +167,12 @@ These are the Photoshop operations currently implemented in `skills/photoshop-js
 - `set_active_layer_opacity` (set the active layer opacity)
 - `set_active_layer_blend_mode` (set the active layer blend mode)
 - `set_layer_style` (set layer effects like shadows, glows, strokes, overlays)
+
+**Batch & bulk**
+- `batch_commands` (run multiple commands sequentially, collecting results)
+- `create_layers_bulk` (create multiple empty/text layers)
+- `set_text_bulk` (update multiple text layers)
+- `apply_layer_styles_bulk` (apply layer styles to multiple layers)
 
 ## Official documentation sources
 
